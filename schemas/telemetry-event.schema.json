@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:production-project-template:schema:telemetry-event:1",
+  "title": "Operational telemetry event",
+  "description": "Version 1 allowlisted cross-language event envelope; projects may extend it through a reviewed schema change.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "timestamp",
+    "severity",
+    "event",
+    "service",
+    "environment",
+    "release",
+    "revision",
+    "operation",
+    "outcome"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "severity": {
+      "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    },
+    "event": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$",
+      "maxLength": 128
+    },
+    "service": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "environment": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "release": {"type": "string", "minLength": 1, "maxLength": 128},
+    "revision": {"type": "string", "minLength": 1, "maxLength": 128},
+    "operation": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "outcome": {
+      "enum": ["success", "rejected", "error", "degraded", "cancelled"]
+    },
+    "message": {"type": "string", "maxLength": 1024},
+    "correlation_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "duration_ms": {"type": "number", "minimum": 0},
+    "error_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "maxLength": 128
+    },
+    "error_type": {"type": "string", "minLength": 1, "maxLength": 128},
+    "error_stack": {"type": "string", "maxLength": 16384},
+    "retryable": {"type": "boolean"},
+    "http_method": {"type": "string", "maxLength": 16},
+    "http_route": {"type": "string", "maxLength": 256},
+    "http_status": {"type": "integer", "minimum": 100, "maximum": 599},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "host": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "logger": {"type": "string", "minLength": 1, "maxLength": 256},
+    "pid": {"type": "integer", "minimum": 0},
+    "process_instance_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "process_seq": {"type": "integer", "minimum": 1},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "external_run_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "job": {"type": "string", "minLength": 1, "maxLength": 128},
+    "trace_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "span_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+    "attrs": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      },
+      "additionalProperties": {"$ref": "#/$defs/attribute"}
+    },
+    "attrs_dropped": {"type": "integer", "minimum": 1},
+    "attrs_redacted": {"type": "integer", "minimum": 1},
+    "attrs_truncated": {"type": "integer", "minimum": 1}
+  },
+  "dependentRequired": {
+    "error_code": ["error_type", "retryable"],
+    "error_type": ["error_code", "retryable"],
+    "retryable": ["error_code", "error_type"],
+    "error_stack": ["error_code", "error_type", "retryable"]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"outcome": {"const": "error"}},
+        "required": ["outcome"]
+      },
+      "then": {
+        "required": ["error_code", "error_type", "retryable"],
+        "properties": {
+          "severity": {"enum": ["ERROR", "CRITICAL"]}
+        }
+      }
+    },
+    {
+      "if": {"required": ["span_id"]},
+      "then": {"required": ["trace_id"]}
+    },
+    {
+      "if": {"required": ["error_stack"]},
+      "then": {
+        "properties": {"outcome": {"const": "error"}}
+      }
+    }
+  ],
+  "$defs": {
+    "attribute": {
+      "anyOf": [
+        {"type": ["null", "boolean", "integer", "number"]},
+        {"type": "string", "maxLength": 2048},
+        {
+          "type": "array",
+          "maxItems": 32,
+          "items": {"$ref": "#/$defs/attribute"}
+        },
+        {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {"type": "string", "maxLength": 64},
+          "additionalProperties": {"$ref": "#/$defs/attribute"}
+        }
+      ]
+    }
+  }
+}

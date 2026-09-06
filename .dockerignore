@@ -1,0 +1,6 @@
+*
+!Dockerfile
+!requirements.runtime.txt
+!dist/
+dist/*
+!dist/*.whl

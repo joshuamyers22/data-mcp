@@ -1,0 +1,37 @@
+[project]
+name = "data-mcp"
+version = "0.1.0"
+description = "MCP read/write access to local Parquet and local or cloud PostgreSQL"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "LicenseRef-Proprietary"
+dependencies = [
+    "mcp>=2,<3",
+    "duckdb>=1.4,<2",
+    "psycopg[binary]>=3.2,<4",
+    "sqlglot>=28,<31",
+    "pyarrow>=18,<25",
+    "pytz>=2025.2,<2027", # DuckDB Python TIMESTAMPTZ result conversion.
+]
+
+[project.scripts]
+"data-mcp" = "data_mcp.cli:main"
+
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pyright==1.1.411", "ruff==0.16.5", "pytest>=8,<10"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["src", "tests"]

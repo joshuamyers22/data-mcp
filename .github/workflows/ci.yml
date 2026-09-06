@@ -1,0 +1,32 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+        env:
+          POSTGRES_PASSWORD: data_mcp_test_only
+          POSTGRES_DB: data_mcp_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATA_MCP_TEST_DSN: postgresql://postgres:data_mcp_test_only@127.0.0.1:5432/data_mcp_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.12.5"
+      - run: uv sync --frozen --dev
+      - run: make check
+      - run: make export-check
+      - run: make audit build

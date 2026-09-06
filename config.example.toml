@@ -1,0 +1,17 @@
+max_rows = 500
+max_result_bytes = 262144
+query_timeout_seconds = 30
+
+[parquet.raw]
+path = "/Volumes/raw/parquet"
+writable = true
+
+[postgres.local]
+dsn_env = "DATA_MCP_LOCAL_DSN"
+writable = true
+sslmode = "disable" # Only for a trusted local PostgreSQL server.
+
+[postgres.cloud]
+dsn_env = "DATA_MCP_CLOUD_DSN"
+writable = true
+sslmode = "verify-full"

@@ -1,0 +1,17 @@
+# This is a separate analytical launch profile. The normal example stays read/write.
+access_mode = "analysis"
+ontology_file = "/Users/josh/Projects/data-mcp/ontology/manifest.example.toml"
+max_rows = 500
+max_result_bytes = 262144
+query_timeout_seconds = 30
+
+[parquet.raw]
+path = "/Volumes/raw/parquet"
+writable = false
+
+[postgres.local]
+dsn_env = "ANA_LOCAL_READ_DSN"
+writable = false
+sslmode = "disable"
+
+# Add a cloud source with sslmode="verify-full" when a metric needs it.
