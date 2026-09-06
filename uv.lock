@@ -214,7 +214,7 @@ dev = [
 requires-dist = [
     { name = "duckdb", specifier = ">=1.4,<2" },
     { name = "mcp", specifier = ">=2,<3" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.5,<4" },
     { name = "pyarrow", specifier = ">=18,<25" },
     { name = "pytz", specifier = ">=2025.2,<2027" },
     { name = "sqlglot", specifier = ">=28,<31" },
