@@ -1,0 +1,43 @@
+# Synthetic example for the data-mcp-fixture order-line pack. Copy outside its
+# pinned directory, then use a separate analysis config pointing to pack/data.
+schema_version = 1
+
+[notes]
+conventions = "Synthetic development policy: completed lines only; signed quantities and discounts; missing discounts mean zero; empty totals are zero. Calendar dates use inclusive start and exclusive end. Not independently reviewed domain semantics."
+
+[metrics.net_between]
+backend = "parquet"
+source = "fixture"
+paths = ["lines.parquet"]
+description = "Synthetic completed net cents in a bounded date window"
+grain = "one total"
+units = "cents"
+timezone = "UTC"
+owner = "synthetic-development"
+reviewed_on = 2026-09-09
+expected_columns = ["total"]
+sql = """
+SELECT COALESCE(SUM(quantity * unit_price_cents - COALESCE(discount_cents, 0)), 0) AS total
+FROM data
+WHERE status = 'completed'
+  AND CAST(ordered_on AS DATE) >= $start_day
+  AND CAST(ordered_on AS DATE) < $end_day
+"""
+
+[[metrics.net_between.date_windows]]
+start = "start_day"
+end = "end_day"
+max_days = 31
+bounds = "[)"
+
+[metrics.net_between.parameters.start_day]
+type = "date"
+description = "Inclusive start calendar date in UTC"
+minimum = 2026-01-01
+maximum = 2026-12-31
+
+[metrics.net_between.parameters.end_day]
+type = "date"
+description = "Exclusive end calendar date in UTC"
+minimum = 2026-01-01
+maximum = 2027-01-01

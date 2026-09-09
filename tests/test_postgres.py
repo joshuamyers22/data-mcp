@@ -162,3 +162,96 @@ def test_governed_postgres_metric(
     assert result["rows"] == [["2.50", "America/New_York"]]
     with pytest.raises(DataError, match="read-only"):
         analysis.execute_postgres("test", f"DELETE FROM {schema}.items")
+
+
+def test_postgres_bound_metric_values(
+    database: tuple[DataStore, str], tmp_path: Path
+) -> None:
+    import asyncio
+    import json
+
+    from mcp import Client
+
+    from data_mcp.ontology import SemanticLayer
+    from data_mcp.server import create_server
+
+    store, _ = database
+    query = (
+        "SELECT %(label)s::text AS label, '%(label)s' AS literal, "
+        "%(minimum)s::int % 2 AS remainder, %(start_day)s::date AS day, "
+        "%(active)s::boolean AS active, %(label)s::text AS repeated, "
+        "current_setting('transaction_read_only') AS readonly"
+    )
+    path = tmp_path.resolve() / "parameters.toml"
+    path.write_text(
+        """schema_version=1
+[metrics.filtered]
+backend="postgres"
+source="test"
+description="Synthetic bound value checks"
+grain="one row"
+units="mixed test values"
+timezone="UTC"
+owner="test"
+reviewed_on=2026-09-09
+expected_columns=[
+  "label", "literal", "remainder", "day", "active", "repeated", "readonly"
+]
+"""
+        + f"sql={json.dumps(query)}\n"
+        + """
+[metrics.filtered.parameters.label]
+type="string"
+description="Bound text"
+max_length=128
+[metrics.filtered.parameters.minimum]
+type="integer"
+description="Bound integer"
+minimum=0
+maximum=10
+[metrics.filtered.parameters.start_day]
+type="date"
+description="Bound calendar date"
+minimum=2026-01-01
+maximum=2026-12-31
+[metrics.filtered.parameters.active]
+type="boolean"
+description="Bound flag"
+"""
+    )
+    settings = store.settings.model_copy(
+        update={"ontology_file": path, "access_mode": "analysis"}
+    )
+    layer = SemanticLayer(settings)
+    values: dict[str, object] = {
+        "label": "x' OR TRUE --",
+        "minimum": 5,
+        "start_day": "2026-01-01",
+        "active": True,
+    }
+    expected = [
+        ["x' OR TRUE --", "%(label)s", 1, "2026-01-01", True, "x' OR TRUE --", "on"]
+    ]
+    result = layer.run_metric(DataStore(settings), "filtered", layer.revision, values)
+    assert result["rows"] == expected
+    assert result["parameters"] == values
+    assert "%(minimum)s" in result["submitted_sql"]
+    assert "$3" in result["normalized_sql"]
+    # Streaming row limit remains active with raw server-side bindings.
+    result = store.query_postgres(
+        "test", "SELECT generate_series(1, %(count)s)", parameters={"count": 10}
+    )
+    assert result["rows"] == [[1], [2]]
+    assert result["truncated"] is True
+
+    async def run() -> None:
+        async with Client(create_server(settings)) as client:
+            result = await client.call_tool(
+                "run_metric",
+                {"name": "filtered", "revision": layer.revision, "parameters": values},
+            )
+            assert not result.is_error
+            assert result.structured_content is not None
+            assert result.structured_content["rows"] == expected
+
+    asyncio.run(run())

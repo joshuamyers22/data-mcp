@@ -157,9 +157,18 @@ Make source/grain/units/timezone and null/dedup/join assumptions explicit. Call
 against fixtures before involving a model. Reuse this tool for notebook/panel/agent
 consumers; free-form queries are ad hoc and cannot claim canonical status.
 
-Before user-driven date ranges or filters, add a typed parameter schema with prepared
-bindings in both adapters, explicit allowed ranges and timezone/bound conventions.
-Do not concatenate model text into SQL. Before evaluating changing live data, add
+**Typed parameter status, 2026-09-09:** promoted definitions now declare bounded
+calendar dates, signed integers, strings/choices and booleans. `run_metric` validates
+exact required keys and declared date windows before accessing either adapter.
+DuckDB uses named bindings; PostgreSQL converts only placeholder AST nodes to
+native positional bindings through a raw server cursor. Fixed-only catalogs retain
+their original tool schema. Mos checked-answer conversations preserve parameters
+and SQL lineage. SQL authors still own the stated timezone and interval meaning;
+nullable, array, decimal and timestamp parameters are deferred. See
+[parameter contract](METRIC_PARAMETERS.md) and
+[verification](METRIC_PARAMETERS_VERIFICATION.md).
+
+Before evaluating changing live data, add
 immutable source/snapshot identifiers and a result envelope with output types,
 completeness, provenance and result IDs. Add fixture cases for schema drift and
 nonfinite/decimal serialization.
@@ -354,8 +363,8 @@ from forty endpoint lines or the cost of installing a chart library.
 ## Deferred choices and owners
 
 Owner for domain definitions, source privileges and live rollout: Josh Myers.
-Required before relevant stage: intended schema and snapshot fixture (0–2), typed
-parameters/type/freshness contracts (2), live analytical conformance and account
+Required before relevant stage: intended schema and snapshot fixture (0–2), full
+output-type/freshness contracts and any additional parameter types (2), live analytical conformance and account
 deployment validation for the implemented bounded loop (3),
 deployment of the implemented private result storage and domain-level answer
 validation (4), proposal storage/promotion (5), held-out evaluation (6),

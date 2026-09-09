@@ -186,6 +186,21 @@ def create_server(settings: Settings) -> MCPServer:
             """List governed metrics, sources, units and the required revision."""
             return await invoke("list_metrics", catalog.list_metrics)
 
+        async def run_metric_parameters(
+            name: str,
+            revision: str,
+            parameters: dict[str, Any] | None = None,
+        ) -> dict[str, Any]:
+            """Run reviewed metric SQL with declared typed values; partial results fail.
+
+            Uses the configured SQL and source. Parameters must match the catalog.
+            Revision identifies the definition; data_snapshot is currently unavailable.
+            """
+            return await invoke(
+                "run_metric",
+                lambda: catalog.run_metric(store, name, revision, parameters),
+            )
+
         async def run_metric(name: str, revision: str) -> dict[str, Any]:
             """Run a fixed reviewed metric at a known revision; partial results fail.
 
@@ -196,6 +211,13 @@ def create_server(settings: Settings) -> MCPServer:
                 "run_metric", lambda: catalog.run_metric(store, name, revision)
             )
 
-        for tool in (get_semantic_context, list_metrics, run_metric):
+        for tool in (get_semantic_context, list_metrics):
             server.add_tool(tool, annotations=read)
+        # Keep the established input schema for fixed-only catalogs. Parameterized
+        # catalogs explicitly advertise their richer input shape on discovery.
+        server.add_tool(
+            run_metric_parameters if catalog.has_parameters else run_metric,
+            name="run_metric",
+            annotations=read,
+        )
     return server

@@ -17,6 +17,7 @@ import pyarrow.parquet as _pq
 from psycopg.sql import SQL
 
 from .config import Settings
+from .parameters import BoundValue, postgres_bindings
 from .sql import DataError, parquet_query, statement
 
 # PyArrow Parquet APIs do not ship complete type information.
@@ -176,7 +177,13 @@ class DataStore:
             conn.close()
 
     def query_parquet(
-        self, root: str, paths: list[str], sql: str, *, timezone: str | None = None
+        self,
+        root: str,
+        paths: list[str],
+        sql: str,
+        *,
+        timezone: str | None = None,
+        parameters: dict[str, BoundValue] | None = None,
     ) -> dict[str, Any]:
         query = parquet_query(sql)
         files = self.selected(root, paths)
@@ -184,7 +191,8 @@ class DataStore:
             return result_rows(
                 conn.execute(
                     f"SELECT * FROM ({query}) AS result "
-                    f"LIMIT {self.settings.max_rows + 1}"
+                    f"LIMIT {self.settings.max_rows + 1}",
+                    parameters,
                 ),
                 self.settings,
             )
@@ -305,15 +313,26 @@ class DataStore:
             yield conn
 
     def query_postgres(
-        self, source: str, sql: str, *, timezone: str | None = None
+        self,
+        source: str,
+        sql: str,
+        *,
+        timezone: str | None = None,
+        parameters: dict[str, BoundValue] | None = None,
     ) -> dict[str, Any]:
         tree = statement(sql, "postgres")
         query = tree.sql(dialect="postgres", comments=False)
-        with self.postgres(source) as conn, conn.cursor(name="data_mcp") as cursor:
+        with self.postgres(source) as conn:
             if timezone is not None:
                 conn.execute("SELECT set_config('TimeZone', %s, true)", [timezone])
-            cursor.execute(SQL(cast(LiteralString, query)))
-            return result_rows(cursor, self.settings)
+            if parameters:
+                query, values = postgres_bindings(sql, parameters)
+                with psycopg.RawServerCursor(conn, "data_mcp") as cursor:
+                    cursor.execute(SQL(cast(LiteralString, query)), values)
+                    return result_rows(cursor, self.settings)
+            with conn.cursor(name="data_mcp") as cursor:
+                cursor.execute(SQL(cast(LiteralString, query)))
+                return result_rows(cursor, self.settings)
 
     def execute_postgres(self, source: str, sql: str) -> dict[str, Any]:
         tree = statement(sql, "postgres", write=True)

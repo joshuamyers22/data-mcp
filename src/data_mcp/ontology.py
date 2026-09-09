@@ -13,6 +13,15 @@ from pydantic import Field, ValidationError, model_validator
 
 from .config import Settings, StrictModel
 from .data import DataStore
+from .parameters import (
+    PARAMETER_NAME,
+    DateParameter,
+    DateWindow,
+    Parameter,
+    placeholders,
+    postgres_bindings,
+    validate_values,
+)
 from .sql import DataError, parquet_query, statement
 
 MAX_CATALOG_BYTES = 65536
@@ -31,6 +40,12 @@ class Metric(StrictModel):
     reviewed_on: date
     expected_columns: tuple[str, ...] = Field(min_length=1, max_length=128)
     sql: str = Field(min_length=1, max_length=65536)
+    parameters: dict[str, Parameter] = Field(
+        default_factory=dict, max_length=16, exclude_if=lambda value: not value
+    )
+    date_windows: tuple[DateWindow, ...] = Field(
+        default=(), max_length=8, exclude_if=lambda value: not value
+    )
 
     @model_validator(mode="after")
     def validate_query(self) -> Self:
@@ -51,6 +66,16 @@ class Metric(StrictModel):
             if self.paths:
                 raise ValueError("PostgreSQL metrics cannot specify Parquet paths")
             statement(self.sql, "postgres")
+        if any(not PARAMETER_NAME.fullmatch(name) for name in self.parameters):
+            raise ValueError("Use lowercase parameter names with underscores")
+        if placeholders(self.sql, self.backend) != set(self.parameters):
+            raise ValueError("SQL placeholders must match all declared parameters")
+        for window in self.date_windows:
+            if window.start == window.end or not all(
+                isinstance(self.parameters.get(name), DateParameter)
+                for name in (window.start, window.end)
+            ):
+                raise ValueError("Date windows require two distinct date parameters")
         if len(set(self.expected_columns)) != len(self.expected_columns):
             raise ValueError("Metric output columns must be unique")
         return self
@@ -99,6 +124,10 @@ class SemanticLayer:
         # never silently truncated: a truncated convention can change its meaning.
         self._bounded(self.context())
 
+    @property
+    def has_parameters(self) -> bool:
+        return any(metric.parameters for metric in self._manifest.metrics.values())
+
     def _bounded(self, result: dict[str, Any]) -> dict[str, Any]:
         if len(json.dumps(result, ensure_ascii=True).encode()) > self._max_result_bytes:
             raise DataError("Semantic result exceeds the configured result byte limit")
@@ -122,7 +151,13 @@ class SemanticLayer:
             }
         )
 
-    def run_metric(self, store: DataStore, name: str, revision: str) -> dict[str, Any]:
+    def run_metric(
+        self,
+        store: DataStore,
+        name: str,
+        revision: str,
+        parameters: dict[str, object] | None = None,
+    ) -> dict[str, Any]:
         if revision != self.revision:
             raise DataError(
                 "Semantic revision changed; retrieve context and review again"
@@ -130,6 +165,8 @@ class SemanticLayer:
         metric = self._manifest.metrics.get(name)
         if metric is None:
             raise DataError("Unknown governed metric")
+        supplied = parameters if parameters is not None else {}
+        bound = validate_values(metric.parameters, metric.date_windows, supplied)
         executed_sql = (
             parquet_query(metric.sql)
             if metric.backend == "parquet"
@@ -137,14 +174,23 @@ class SemanticLayer:
                 dialect="postgres", comments=False
             )
         )
+        if bound and metric.backend == "postgres":
+            executed_sql, _ = postgres_bindings(metric.sql, bound)
         started = datetime.now(UTC).isoformat()
         if metric.backend == "parquet":
             result = store.query_parquet(
-                metric.source, list(metric.paths), metric.sql, timezone=metric.timezone
+                metric.source,
+                list(metric.paths),
+                metric.sql,
+                timezone=metric.timezone,
+                parameters=bound or None,
             )
         else:
             result = store.query_postgres(
-                metric.source, metric.sql, timezone=metric.timezone
+                metric.source,
+                metric.sql,
+                timezone=metric.timezone,
+                parameters=bound or None,
             )
         if result["truncated"]:
             raise DataError(
@@ -167,6 +213,7 @@ class SemanticLayer:
                 "timezone": metric.timezone,
                 "submitted_sql": metric.sql,
                 "normalized_sql": executed_sql,
+                **({"parameters": supplied} if metric.parameters else {}),
                 "started_at": started,
                 "completed_at": datetime.now(UTC).isoformat(),
                 "data_snapshot": None,
