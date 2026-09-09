@@ -33,7 +33,8 @@ Mos Eisley's `feat/data-mcp-client` integration supplies stdio discovery, calls 
 a canonical agent dispatcher; see [connection and verification](MOS_EISLEY.md).
 Its bounded OpenAI analytical workflow is implemented on a separate feature branch;
 live conformance remains open, while the bounded answer/artifact slice is
-implemented on a further branch (Stages 3–4).
+implemented on a further branch (Stages 3–4). An offline analytical evaluator now
+checks reviewed expectations against saved bundles (bounded parts of Stages 0/6).
 
 ## Implemented integration slice
 
@@ -107,6 +108,14 @@ before experimentation. Freeze model/provider/version, prompt, tools, budgets an
 context treatment for each arm; run all arms through the same runner. Five questions
 can show plumbing, not reliable generalization. Larger evaluation needs task-specific
 sample sizing; do not prescribe an arbitrary sample as proof.
+
+**Offline tooling status, 2026-09-09:** Mos Eisley `feat/analysis-evaluation` defines
+bounded suites with per-arm expectations, asserted fixture identities, reviewed SQL,
+source/unit bindings and typed cell/tolerance/order rules. Task export omits golden
+labels and enforces disjoint declared question families. Suite hashes and new
+configuration/prompt/tool-catalog identities bind scoring inputs, but do not prove
+independent review, source snapshots, preregistration or semantic holdout secrecy.
+The packaged example is synthetic; actual domain cases still require review.
 
 Done when: cases and labels are independently reviewable, development and holdout
 families are distinct, and data cannot drift between treatment arms.
@@ -223,8 +232,9 @@ retain parent/result hashes and never rerun SQL. Physical cleanup is explicit;
 expiry alone is not deletion. The default remains memory-only content retention.
 See the [operator contract](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evidence-artifacts/docs/ANALYSIS_EVIDENCE.md)
 and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evidence-artifacts/docs/ANALYSIS_EVIDENCE_VERIFICATION.md).
-Arbitrary narrative/arithmetic verification, domain evaluation and chart/UI work
-remain open beyond this bounded cell-answer/export slice.
+Arbitrary narrative/arithmetic verification, measured domain quality and chart/UI
+work remain open beyond this bounded cell-answer/export slice. Offline comparison
+with reviewed domain expectations is now available as described in Stage 6.
 
 Create an answer envelope with status, final text, supporting result IDs, SQL trail,
 metric revision, source snapshot, timestamps, completeness and provider usage. The
@@ -256,6 +266,23 @@ Done when: proposal creation never changes runtime revision, and accepted change
 have traceable reviewers, scope and regression evidence.
 
 ## Stage 6 — Compare under controlled conditions
+
+**Implemented bounded slice, 2026-09-09:** Mos Eisley `feat/analysis-evaluation`
+grades private captured bundles offline against a frozen reviewed suite. It checks
+question, provider/model, configuration/prompt/tool-catalog hashes, promoted revision,
+expected status and typed cells bound to reviewed SQL/arguments/source metadata.
+Every planned case/arm stays in the denominator, including omitted, failed, expired
+and invalid runs; duplicate assignments and reused artifacts reject the submission.
+Reports include descriptive counts, reported usage, retained spending and latency
+with explicit unknown counts. Grading makes no provider calls or source queries.
+See the [operator guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evaluation/docs/ANALYSIS_EVALUATION.md)
+and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evaluation/docs/ANALYSIS_EVALUATION_VERIFICATION.md).
+
+This does not establish source truth, source snapshot identity, statistical benefit,
+explanation quality or a controlled comparison. The current agent always bootstraps
+promoted context; a true ontology-free runner, randomized/interleaved live execution,
+probe/maintenance accounting and assessment of reviewed domain cases remain open.
+Automatic learning/promotion remains deferred pending useful evidence.
 
 Run no-ontology, seeded, and seeded-plus-promoted arms on the same held-out cases,
 fixtures, model settings and budgets. Forbid holdout-driven edits until the assessment

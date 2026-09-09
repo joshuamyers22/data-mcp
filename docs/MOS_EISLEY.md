@@ -26,8 +26,11 @@ Its cross-repository Parquet test completes a conversation through this installe
 server. The further `feat/analysis-evidence-artifacts` branch adds checked scalar
 cell answers, SQL/result lineage, optional private artifact verification and exports
 from captured results. See the [evidence/artifact guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evidence-artifacts/docs/ANALYSIS_EVIDENCE.md).
-Paid analytical conformance, source snapshots and domain-level correctness remain
-unverified.
+The next `feat/analysis-evaluation` branch adds offline comparison with reviewed
+question, run-identity, SQL/source and cell expectations, including missing/failure
+accounting. See the [evaluation guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evaluation/docs/ANALYSIS_EVALUATION.md).
+Paid analytical conformance, source snapshots and measured domain-level correctness
+remain unverified.
 This data-mcp server continues to run over stdio.
 
 Install the local-client branch (or its HTTP extension) and follow the
@@ -86,6 +89,7 @@ Full client gate details are retained in its
 
 The paid `openai-run` and critic/judge paths still expose no MCP tools. The separate
 `analysis-run` path now provides bounded conversations, whole-run spending admission
-and explicit provider transfer consent. Retained source snapshots, golden evaluation
-results, automatic learning and an Ana Lite UI remain future work. Actual mounted
+and explicit provider transfer consent. Offline grading of retained results is now
+available; retained source snapshots, reviewed domain evaluation results, automatic
+learning and an Ana Lite UI remain future work. Actual mounted
 HDD paths, role grants and cloud certificate verification remain deployment inputs.
