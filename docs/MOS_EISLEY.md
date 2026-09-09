@@ -17,6 +17,13 @@ wrappers. Its [schema guide](https://github.com/joshuamyers22/mos-eisley/blob/fe
 explains the `argument_encodings` returned by discovery and the optional
 `schema_mode: "json_object"` configuration. Existing simple data-mcp tools retain
 their ordinary argument shapes by default.
+The `feat/bounded-mcp-analysis` branch adds `analysis-demo` and opt-in OpenAI
+analytical conversations through these tools, with a read-only profile, promoted
+revision checks, bounded requests and whole-run ledger reservations. See the
+[analytical guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/docs/ANALYSIS.md)
+and [fixture/package evidence](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/docs/ANALYSIS_VERIFICATION.md).
+Its cross-repository Parquet test completes a conversation through this installed
+server. Live multi-turn provider calls and full answer artifacts remain unverified.
 This data-mcp server continues to run over stdio.
 
 Install the local-client branch (or its HTTP extension) and follow the
@@ -67,14 +74,14 @@ Executed Mos Eisley tests:
   cancellation, process cleanup, oversized results and redacted wire diagnostics.
 
 The cross-repository tests live in Mos Eisley's
-[`tests/test_mcp_data_integration.py`](https://github.com/joshuamyers22/mos-eisley/blob/feat/data-mcp-client/tests/test_mcp_data_integration.py).
+[`tests/test_mcp_data_integration.py`](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/tests/test_mcp_data_integration.py).
 They take `DATA_MCP_TEST_PYTHON` and an optional **disposable** `DATA_MCP_TEST_DSN`.
 Ordinary CI uses self-contained stdio fixtures; cross-repository tests are opt-in.
 Full client gate details are retained in its
 [verification record](https://github.com/joshuamyers22/mos-eisley/blob/feat/data-mcp-client/docs/MCP_DATA_VERIFICATION.md).
 
-The paid `openai-run` and critic/judge paths still expose no MCP tools. The adapter
-is ready for a separately bounded analytical conversation; it does not supply
-multi-turn spend admission, provider transfer consent, retained source snapshots,
-golden evaluation results, automatic learning or an Ana Lite UI. Actual mounted
+The paid `openai-run` and critic/judge paths still expose no MCP tools. The separate
+`analysis-run` path now provides bounded conversations, whole-run spending admission
+and explicit provider transfer consent. Retained source snapshots, golden evaluation
+results, automatic learning and an Ana Lite UI remain future work. Actual mounted
 HDD paths, role grants and cloud certificate verification remain deployment inputs.

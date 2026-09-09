@@ -31,7 +31,8 @@ access, semantic definitions and metric execution. It makes no model calls. Do n
 introduce another SQLAlchemy Warehouse with its own permissions, limits and credentials.
 Mos Eisley's `feat/data-mcp-client` integration supplies stdio discovery, calls and
 a canonical agent dispatcher; see [connection and verification](MOS_EISLEY.md).
-Its paid multi-turn analytical workflow remains an explicit next stage.
+Its bounded OpenAI analytical workflow is implemented on a separate feature branch;
+live conformance and reviewable answer artifacts remain later work (Stages 3–4).
 
 ## Implemented integration slice
 
@@ -163,17 +164,18 @@ The `feat/mcp-schema-compatibility` client branch now adds bounded local schema
 references, locally enforced constraints and explicit JSON argument wrappers for
 nullable fields, unions and dictionaries. See the
 [schema evidence](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-schema-compatibility/docs/MCP_SCHEMA_VERIFICATION.md).
-Unsupported vocabularies remain blocked. This stage's paid analytical-agent loop
-is still separate; connection/schema work does not enable paid tool calls.
+Unsupported vocabularies remain blocked. Connection/schema work alone does not
+enable paid tool calls. The separate analytical milestone below now supplies an
+explicit opt-in provider path.
 
 Use the Mos Eisley MCP client adapter with its analysis configuration. The
-connection and fixture-agent hook are implemented; the complete analytical
-conversation and provider loop remain open. First fetch promoted context; prefer
+connection and bounded OpenAI analytical conversation are implemented on
+`feat/bounded-mcp-analysis`. First fetch promoted context; prefer
 `run_metric`; use source schema/query tools only for an ad-hoc question.
 Ask when the metric/source/time range
 is ambiguous. Keep tools and semantic text distinct from trusted controller policy.
 
-Before any paid call, implement per-user/account cost reservations, maximum turns,
+Before any paid call, enforce per-user/account cost reservations, maximum turns,
 provider output tokens, tool calls, queue size and whole-run deadlines. Cancellation
 must propagate to supported operations, and the client must understand that current
 file writes are not aborted by cancellation. Never automatically retry uncertain
@@ -183,6 +185,20 @@ The current server's query timeouts and two running operations do not supply thi
 whole-agent budget. Mos Eisley's existing one-prompt OpenAI spending machinery is
 not automatically an Anthropic multi-turn budget. Choose model IDs and pricing from
 verified provider/account configuration at the time of execution.
+
+**Bounded analytical status, 2026-09-09:** Mos Eisley now supplies `analysis-demo`
+and an opt-in `analysis-run` OpenAI path. It enforces promoted-context/metric
+revision binding, explicit read-only grants, aggregate token/byte/turn/tool limits,
+serial tool dispatch, bounded pending calls and whole-run cancellation. A private
+operator-selected ledger atomically reserves worst-case run cost and admission
+slots before provider credentials or data transfer. Unknown billing and crashes
+retain the full reservation. This covers cooperating processes using one ledger;
+account labels are operator assertions, not authenticated distributed quotas.
+The CLI uses memory-only content retention and emits an answer/evidence summary
+plus a monetary receipt. It does not create transcript/SQL artifacts or independently
+verify numerical claims. Anthropic/Google remain future provider integrations.
+See [configuration](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/docs/ANALYSIS.md)
+and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/docs/ANALYSIS_VERIFICATION.md).
 
 Done when: fixture conversations answer, clarify, refuse unavailable input and stop
 at budget limits; adversarial source text cannot obtain a tool outside the profile.
@@ -254,7 +270,8 @@ from forty endpoint lines or the cost of installing a chart library.
 
 Owner for domain definitions, source privileges and live rollout: Josh Myers.
 Required before relevant stage: intended schema and snapshot fixture (0–2), typed
-parameters/type/freshness contracts (2), MCP client and budgeted provider loop (3),
+parameters/type/freshness contracts (2), live analytical conformance and account
+deployment validation for the implemented bounded loop (3),
 private run/result storage (4), proposal storage/promotion (5), held-out evaluation (6),
 site authentication/deployment evidence (7). These are recorded work, not implemented
 capabilities or reasons to block the useful semantic MCP slice.
