@@ -36,6 +36,11 @@ analysis without the semantic catalog, using the same controller and spending
 controls. Copy `config.ana-raw.example.toml` to ignored `config.ana-raw.toml`, adapting
 it to the same source fixtures as the promoted arm. See its
 [raw baseline guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-raw-baseline/docs/ANALYSIS_RAW_BASELINE.md).
+The further `feat/analysis-comparison-schedule` branch freezes balanced case/arm
+orders and checks recorded timing against the retained schedule digest. Its
+[comparison guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-comparison-schedule/docs/ANALYSIS_COMPARISON_SCHEDULE.md)
+includes a synthetic raw/promoted demo; source freezing, live experiment execution
+and measured domain quality remain open.
 This data-mcp server continues to run over stdio.
 
 Install the local-client branch (or its HTTP extension) and follow the

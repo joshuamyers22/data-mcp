@@ -298,6 +298,18 @@ may still encode domain knowledge, and prompt/tool differences must be considere
 when interpreting comparisons. Actual reviewed fixtures and controlled assessment
 remain required.
 
+**Schedule status, 2026-09-09:** Mos Eisley `feat/analysis-comparison-schedule`
+creates a frozen, label-free schedule with seeded case order and rotating arm
+positions, keeping each case's arms together. Offline assessment binds the exact
+schedule digest and suite, checks captured controller timestamps for pre-schedule,
+out-of-order or overlapping runs, and preserves missing/failure timing as unknown.
+The synthetic demo runs both raw/promoted arms under that schedule and retains
+failures in the planned totals. This balances positions but does not authenticate
+execution, freeze sources, establish independent observations or measure model
+quality. It dispatches no paid experiment and provides no durable live executor.
+See the [operator guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-comparison-schedule/docs/ANALYSIS_COMPARISON_SCHEDULE.md)
+and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-comparison-schedule/docs/ANALYSIS_SCHEDULE_VERIFICATION.md).
+
 Run no-ontology, seeded, and seeded-plus-promoted arms on the same held-out cases,
 fixtures, model settings and budgets. Forbid holdout-driven edits until the assessment
 is closed. Randomize/interleave arm order where provider drift might matter. Report
