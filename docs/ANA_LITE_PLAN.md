@@ -279,10 +279,24 @@ See the [operator guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/a
 and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evaluation/docs/ANALYSIS_EVALUATION_VERIFICATION.md).
 
 This does not establish source truth, source snapshot identity, statistical benefit,
-explanation quality or a controlled comparison. The current agent always bootstraps
-promoted context; a true ontology-free runner, randomized/interleaved live execution,
+explanation quality or a controlled comparison. Randomized/interleaved live execution,
 probe/maintenance accounting and assessment of reviewed domain cases remain open.
 Automatic learning/promotion remains deferred pending useful evidence.
+
+**Raw baseline status, 2026-09-09:** Mos Eisley `feat/analysis-raw-baseline` adds
+explicit `context_mode="raw"`: source discovery and configured raw read tools through
+the same controller, budgets, spending and artifact checks. It excludes promoted
+semantic tools, records no semantic revision and supports raw/promoted arms in the
+offline grader. Use [config.ana-raw.example.toml](../config.ana-raw.example.toml) for a
+server launch with the same read-only source permissions and no ontology loaded.
+The default promoted mode is unchanged and never falls back silently.
+See the [raw operator guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-raw-baseline/docs/ANALYSIS_RAW_BASELINE.md)
+and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-raw-baseline/docs/ANALYSIS_RAW_VERIFICATION.md).
+The real temporary Parquet conversation returns the same row count for both arms;
+this is plumbing evidence, not measured domain accuracy. Schema/comments/source text
+may still encode domain knowledge, and prompt/tool differences must be considered
+when interpreting comparisons. Actual reviewed fixtures and controlled assessment
+remain required.
 
 Run no-ontology, seeded, and seeded-plus-promoted arms on the same held-out cases,
 fixtures, model settings and budgets. Forbid holdout-driven edits until the assessment

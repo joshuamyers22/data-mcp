@@ -11,4 +11,5 @@ dist/
 .work/
 config.toml
 config.ana.toml
+config.ana-raw.toml
 .pytest_cache/

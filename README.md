@@ -48,6 +48,8 @@ Ana Lite integration adds an optional, versioned semantic manifest and three too
 [15 adversarial findings](docs/reviews/ana-lite-adversarial-review.md), and
 [analysis configuration](config.ana.example.toml). The normal profile keeps full
 read/write capability; `access_mode="analysis"` omits and denies mutation tools.
+For a raw analytical comparison arm, [config.ana-raw.example.toml](config.ana-raw.example.toml)
+uses the same read-only source profile with no ontology loaded.
 Set `ontology_file` to an absolute promoted TOML manifest path to enable semantic tools.
 It is loaded at startup and `--check` also validates it. No model SDK, paid agent,
 automatic learning or UI is added by this integration.

@@ -31,6 +31,11 @@ question, run-identity, SQL/source and cell expectations, including missing/fail
 accounting. See the [evaluation guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evaluation/docs/ANALYSIS_EVALUATION.md).
 Paid analytical conformance, source snapshots and measured domain-level correctness
 remain unverified.
+The subsequent `feat/analysis-raw-baseline` branch adds explicit source-discovery/SQL
+analysis without the semantic catalog, using the same controller and spending
+controls. Copy `config.ana-raw.example.toml` to ignored `config.ana-raw.toml`, adapting
+it to the same source fixtures as the promoted arm. See its
+[raw baseline guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-raw-baseline/docs/ANALYSIS_RAW_BASELINE.md).
 This data-mcp server continues to run over stdio.
 
 Install the local-client branch (or its HTTP extension) and follow the

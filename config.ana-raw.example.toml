@@ -1,0 +1,16 @@
+# Raw analytical control: same source permissions, no promoted ontology loaded.
+access_mode = "analysis"
+max_rows = 500
+max_result_bytes = 262144
+query_timeout_seconds = 30
+
+[parquet.raw]
+path = "/Volumes/raw/parquet"
+writable = false
+
+[postgres.local]
+dsn_env = "ANA_LOCAL_READ_DSN"
+writable = false
+sslmode = "disable"
+
+# Add a cloud source with sslmode="verify-full" when the reviewed source needs it.
