@@ -10,4 +10,5 @@ dist/
 !.env.example
 .work/
 config.toml
+config.ana.toml
 .pytest_cache/

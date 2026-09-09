@@ -123,12 +123,12 @@ run concurrently; client cancellation does not abort an already-running write.
 
 ## Connecting Mos Eisley
 
-The inspected `~/Projects/mos-eisley` implementation still lists its MCP client as
-planned. This server is independently usable and tested with the official MCP
-client over stdio. Making it available inside Mos Eisley additionally requires its
-client registration, tool-schema adapter and capability policy hook.
+Mos Eisley's `feat/data-mcp-client` integration now provides explicit `mcp-list`
+and `mcp-call` commands and a dispatcher for its canonical agent loop. See the
+[connection guide](docs/MOS_EISLEY.md) for read/write and Ana Lite analysis setup.
+Paid model and critic workflows still require their own multi-turn integration.
 
-Use this launch contract when that client is implemented:
+The server launch contract is:
 
 ```text
 command: /Users/josh/Projects/data-mcp/.venv/bin/data-mcp
@@ -137,9 +137,9 @@ environment allowlist: DATA_MCP_LOCAL_DSN, DATA_MCP_CLOUD_DSN
 capabilities: local file read/write, database read/write, network for cloud PostgreSQL
 ```
 
-The server's write annotations are descriptive; Mos Eisley's controller must classify
-and permit these capabilities. Its planned read-only server tier is insufficient
-for this configuration. No Mos Eisley configuration was silently installed.
+The server's write annotations are descriptive. The Mos Eisley client config
+explicitly classifies each allowed tool and requires `allow_writes` for mutation
+tools. Database grants and source permissions remain authoritative.
 
 For clients using the common JSON configuration convention:
 

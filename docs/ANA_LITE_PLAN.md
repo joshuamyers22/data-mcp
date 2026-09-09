@@ -29,8 +29,9 @@ The client owns model selection, orchestration, spend admission, answer attribut
 provider data-transfer policy and UI. Data MCP owns source configuration, source
 access, semantic definitions and metric execution. It makes no model calls. Do not
 introduce another SQLAlchemy Warehouse with its own permissions, limits and credentials.
-Mos Eisley's MCP client remains a prerequisite for its live use; this project is
-verified through the official MCP client and does not pretend that hook exists.
+Mos Eisley's `feat/data-mcp-client` integration supplies stdio discovery, calls and
+a canonical agent dispatcher; see [connection and verification](MOS_EISLEY.md).
+Its paid multi-turn analytical workflow remains an explicit next stage.
 
 ## Implemented integration slice
 
@@ -145,8 +146,10 @@ Do not call matching column names a complete schema-drift check.
 
 ## Stage 3 — Integrate the bounded client loop
 
-Implement the Mos Eisley MCP client adapter (or use a separate, explicitly scoped
-notebook MCP client). First fetch promoted context; prefer `run_metric`; use source
+Use the Mos Eisley MCP client adapter with its analysis configuration. The
+connection and fixture-agent hook are implemented; the complete analytical
+conversation and provider loop remain open. First fetch promoted context; prefer
+`run_metric`; use source
 schema/query tools only for an ad-hoc question. Ask when the metric/source/time range
 is ambiguous. Keep tools and semantic text distinct from trusted controller policy.
 
