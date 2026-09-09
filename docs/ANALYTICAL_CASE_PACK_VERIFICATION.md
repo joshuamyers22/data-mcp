@@ -43,6 +43,9 @@ session, so this is not independent domain review.
 
 - data-mcp `make check`: Ruff and strict Pyright passed; 73 tests passed, four
   disposable-PostgreSQL tests skipped because no DSN was supplied.
+- [GitHub CI](https://github.com/joshuamyers22/data-mcp/actions/runs/34411239127)
+  at `a2b5ef1`: all 77 tests passed with disposable PostgreSQL 17; audit found no
+  known vulnerabilities in the 37 locked runtime packages.
 - data-mcp `make build export-check`: source distribution, wheel and locked export
   passed; no dependency changes.
 - Installed data-mcp wheel: the packaged CLI created a private pack outside the
