@@ -58,3 +58,10 @@ the checkout passed all twelve fixed case-pack answers, the documented January a
 February parameterized queries, and rejection of a reversed window. No dependency
 changes were required. Mos integration is recorded in its parameter integration
 verification guide; the broader Mos gate follows its updated GitHub base.
+
+[GitHub CI at `60ac937`](https://github.com/joshuamyers22/data-mcp/actions/runs/34413039874)
+also passed all 106 tests with PostgreSQL 17, build/export and audit (no known
+vulnerabilities in 37 locked runtime packages). All four optional Mos cross-repository
+tests passed on the updated `4d50ece` base with explicit disposable database inputs;
+this includes the older PostgreSQL committed-write path. The test container was
+stopped and removed after verification.
