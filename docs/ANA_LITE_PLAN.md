@@ -146,11 +146,22 @@ Do not call matching column names a complete schema-drift check.
 
 ## Stage 3 — Integrate the bounded client loop
 
+**Planned remote MCP connection stages, added 2026-09-09:** Mos Eisley M11A adds
+Streamable HTTP with securely referenced tokens, bounded network responses,
+explicit tool/write grants and uncertain-write handling. M11B follows with OAuth
+discovery/login, user/server credential isolation, scope authorization, refresh,
+reauthentication and logout. The
+[Mos Eisley plan §13.3](https://github.com/joshuamyers22/mos-eisley/blob/feat/data-mcp-client/docs/mos-eisley-plan.md#133-remote-mcp-connections--planned-m11a-and-m11b)
+defines both stages and their acceptance tests. These connect existing hosted
+servers; data-mcp's local stdio deployment remains usable without either stage.
+Schema compatibility expansion and this stage's paid analytical-agent loop remain
+separate work. HTTP/OAuth completion does not enable paid tool calls automatically.
+
 Use the Mos Eisley MCP client adapter with its analysis configuration. The
 connection and fixture-agent hook are implemented; the complete analytical
 conversation and provider loop remain open. First fetch promoted context; prefer
-`run_metric`; use source
-schema/query tools only for an ad-hoc question. Ask when the metric/source/time range
+`run_metric`; use source schema/query tools only for an ad-hoc question.
+Ask when the metric/source/time range
 is ambiguous. Keep tools and semantic text distinct from trusted controller policy.
 
 Before any paid call, implement per-user/account cost reservations, maximum turns,
