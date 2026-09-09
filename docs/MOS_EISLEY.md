@@ -23,7 +23,11 @@ revision checks, bounded requests and whole-run ledger reservations. See the
 [analytical guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/docs/ANALYSIS.md)
 and [fixture/package evidence](https://github.com/joshuamyers22/mos-eisley/blob/feat/bounded-mcp-analysis/docs/ANALYSIS_VERIFICATION.md).
 Its cross-repository Parquet test completes a conversation through this installed
-server. Live multi-turn provider calls and full answer artifacts remain unverified.
+server. The further `feat/analysis-evidence-artifacts` branch adds checked scalar
+cell answers, SQL/result lineage, optional private artifact verification and exports
+from captured results. See the [evidence/artifact guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evidence-artifacts/docs/ANALYSIS_EVIDENCE.md).
+Paid analytical conformance, source snapshots and domain-level correctness remain
+unverified.
 This data-mcp server continues to run over stdio.
 
 Install the local-client branch (or its HTTP extension) and follow the

@@ -32,7 +32,8 @@ introduce another SQLAlchemy Warehouse with its own permissions, limits and cred
 Mos Eisley's `feat/data-mcp-client` integration supplies stdio discovery, calls and
 a canonical agent dispatcher; see [connection and verification](MOS_EISLEY.md).
 Its bounded OpenAI analytical workflow is implemented on a separate feature branch;
-live conformance and reviewable answer artifacts remain later work (Stages 3–4).
+live conformance remains open, while the bounded answer/artifact slice is
+implemented on a further branch (Stages 3–4).
 
 ## Implemented integration slice
 
@@ -206,6 +207,25 @@ Live-provider evaluation remains separately budgeted and authorized.
 
 ## Stage 4 — Make answer claims and artifacts reviewable
 
+**Implemented bounded slice, 2026-09-09:** Mos Eisley
+`feat/analysis-evidence-artifacts` returns schema-2 envelopes with original tool
+calls/responses, SQL trail, controller and source-reported timestamps, promoted
+revision, completeness and usage. Answer proposals name specific result cells and
+expected scalar values; the controller checks them and renders the answer text.
+Wrong values, type confusion, duplicate columns, missing cells and incomplete
+results fail. Returned-cell matching does not prove the source is correct or the
+metric/time period is appropriate; source snapshots remain explicitly unverified.
+
+Optional private retention requires configuration plus explicit CLI consent and a
+private destination. UUID bundles support local integrity/lineage verification,
+access expiry and explicit cleanup. Bounded CSV exports use a named captured result,
+retain parent/result hashes and never rerun SQL. Physical cleanup is explicit;
+expiry alone is not deletion. The default remains memory-only content retention.
+See the [operator contract](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evidence-artifacts/docs/ANALYSIS_EVIDENCE.md)
+and [verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/analysis-evidence-artifacts/docs/ANALYSIS_EVIDENCE_VERIFICATION.md).
+Arbitrary narrative/arithmetic verification, domain evaluation and chart/UI work
+remain open beyond this bounded cell-answer/export slice.
+
 Create an answer envelope with status, final text, supporting result IDs, SQL trail,
 metric revision, source snapshot, timestamps, completeness and provider usage. The
 last tool result is not automatically the chart/table source. Persist private UUID
@@ -272,6 +292,7 @@ Owner for domain definitions, source privileges and live rollout: Josh Myers.
 Required before relevant stage: intended schema and snapshot fixture (0–2), typed
 parameters/type/freshness contracts (2), live analytical conformance and account
 deployment validation for the implemented bounded loop (3),
-private run/result storage (4), proposal storage/promotion (5), held-out evaluation (6),
+deployment of the implemented private result storage and domain-level answer
+validation (4), proposal storage/promotion (5), held-out evaluation (6),
 site authentication/deployment evidence (7). These are recorded work, not implemented
 capabilities or reasons to block the useful semantic MCP slice.
