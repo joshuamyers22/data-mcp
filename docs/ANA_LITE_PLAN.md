@@ -150,10 +150,13 @@ Do not call matching column names a complete schema-drift check.
 Streamable HTTP with securely referenced tokens, bounded network responses,
 explicit tool/write grants and uncertain-write handling on `feat/remote-mcp-http`.
 See the [HTTP verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/remote-mcp-http/docs/MCP_HTTP_VERIFICATION.md).
-M11B remains planned, with OAuth
-discovery/login, user/server credential isolation, scope authorization, refresh,
-reauthentication and logout. The
-[Mos Eisley plan §13.3](https://github.com/joshuamyers22/mos-eisley/blob/feat/remote-mcp-http/docs/mos-eisley-plan.md#133-remote-mcp-connections--planned-m11a-and-m11b)
+M11B is implemented for pre-registered public clients on `feat/mcp-oauth`, with
+OAuth discovery/login, OS keychain storage, user/server credential binding, explicit
+scopes, serialized refresh, reauthentication and logout/revocation reporting.
+Other registration methods remain unsupported; native vault/provider deployment
+still needs operator verification. See the
+[OAuth evidence](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-oauth/docs/MCP_OAUTH_VERIFICATION.md). The
+[Mos Eisley plan §13.3](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-oauth/docs/mos-eisley-plan.md#133-remote-mcp-connections--planned-m11a-and-m11b)
 defines both stages and their acceptance tests. These connect existing hosted
 servers; data-mcp's local stdio deployment remains usable without either stage.
 Schema compatibility expansion and this stage's paid analytical-agent loop remain
