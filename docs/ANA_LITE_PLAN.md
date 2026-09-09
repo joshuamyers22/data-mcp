@@ -159,8 +159,12 @@ still needs operator verification. See the
 [Mos Eisley plan §13.3](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-oauth/docs/mos-eisley-plan.md#133-remote-mcp-connections--planned-m11a-and-m11b)
 defines both stages and their acceptance tests. These connect existing hosted
 servers; data-mcp's local stdio deployment remains usable without either stage.
-Schema compatibility expansion and this stage's paid analytical-agent loop remain
-separate work. HTTP/OAuth completion does not enable paid tool calls automatically.
+The `feat/mcp-schema-compatibility` client branch now adds bounded local schema
+references, locally enforced constraints and explicit JSON argument wrappers for
+nullable fields, unions and dictionaries. See the
+[schema evidence](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-schema-compatibility/docs/MCP_SCHEMA_VERIFICATION.md).
+Unsupported vocabularies remain blocked. This stage's paid analytical-agent loop
+is still separate; connection/schema work does not enable paid tool calls.
 
 Use the Mos Eisley MCP client adapter with its analysis configuration. The
 connection and fixture-agent hook are implemented; the complete analytical

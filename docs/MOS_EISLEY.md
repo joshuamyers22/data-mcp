@@ -11,6 +11,12 @@ servers using Streamable HTTP and bearer tokens. See its
 The further `feat/mcp-oauth` branch implements OAuth for pre-registered public
 clients, with OS keychain credentials, refresh and logout. See the
 [OAuth guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-oauth/docs/MCP_DATA.md#oauth-login-and-logout).
+The `feat/mcp-schema-compatibility` branch extends accepted tool schemas with
+bounded local references, local constraint validation and explicit JSON argument
+wrappers. Its [schema guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/mcp-schema-compatibility/docs/MCP_DATA.md#tool-schema-compatibility)
+explains the `argument_encodings` returned by discovery and the optional
+`schema_mode: "json_object"` configuration. Existing simple data-mcp tools retain
+their ordinary argument shapes by default.
 This data-mcp server continues to run over stdio.
 
 Install the local-client branch (or its HTTP extension) and follow the
