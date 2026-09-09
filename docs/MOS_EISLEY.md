@@ -5,7 +5,12 @@ The `feat/data-mcp-client` branch in
 adds explicit local MCP discovery/calls and an adapter for its canonical agent loop.
 It was developed from Mos Eisley main `950cb88`, against data-mcp `2019983`.
 
-Install that branch and follow its
+The stacked `feat/remote-mcp-http` branch adds connections to user-selected hosted
+servers using Streamable HTTP and bearer tokens. See its
+[remote configuration and limits](https://github.com/joshuamyers22/mos-eisley/blob/feat/remote-mcp-http/docs/MCP_DATA.md#connect-your-own-hosted-server).
+OAuth remains planned. This data-mcp server continues to run over stdio.
+
+Install the local-client branch (or its HTTP extension) and follow the
 [client guide](https://github.com/joshuamyers22/mos-eisley/blob/feat/data-mcp-client/docs/MCP_DATA.md).
 The read/write example uses this repository's ignored `config.toml`; the Ana Lite
 example uses a locally prepared `config.ana.toml` copied from

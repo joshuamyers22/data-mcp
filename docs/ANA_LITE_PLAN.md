@@ -146,12 +146,14 @@ Do not call matching column names a complete schema-drift check.
 
 ## Stage 3 — Integrate the bounded client loop
 
-**Planned remote MCP connection stages, added 2026-09-09:** Mos Eisley M11A adds
+**Remote MCP connection status, 2026-09-09:** Mos Eisley M11A implements
 Streamable HTTP with securely referenced tokens, bounded network responses,
-explicit tool/write grants and uncertain-write handling. M11B follows with OAuth
+explicit tool/write grants and uncertain-write handling on `feat/remote-mcp-http`.
+See the [HTTP verification](https://github.com/joshuamyers22/mos-eisley/blob/feat/remote-mcp-http/docs/MCP_HTTP_VERIFICATION.md).
+M11B remains planned, with OAuth
 discovery/login, user/server credential isolation, scope authorization, refresh,
 reauthentication and logout. The
-[Mos Eisley plan §13.3](https://github.com/joshuamyers22/mos-eisley/blob/feat/data-mcp-client/docs/mos-eisley-plan.md#133-remote-mcp-connections--planned-m11a-and-m11b)
+[Mos Eisley plan §13.3](https://github.com/joshuamyers22/mos-eisley/blob/feat/remote-mcp-http/docs/mos-eisley-plan.md#133-remote-mcp-connections--planned-m11a-and-m11b)
 defines both stages and their acceptance tests. These connect existing hosted
 servers; data-mcp's local stdio deployment remains usable without either stage.
 Schema compatibility expansion and this stage's paid analytical-agent loop remain
