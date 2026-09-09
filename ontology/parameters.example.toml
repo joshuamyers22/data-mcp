@@ -41,3 +41,9 @@ type = "date"
 description = "Exclusive end calendar date in UTC"
 minimum = 2026-01-01
 maximum = 2027-01-01
+
+# DuckDB SUM of these integer line amounts returns HUGEINT.
+[[metrics.net_between.output_contract]]
+name = "total"
+sql_type = "HUGEINT"
+nullable = false

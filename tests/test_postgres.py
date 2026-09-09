@@ -255,3 +255,140 @@ description="Bound flag"
             assert result.structured_content["rows"] == expected
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "expression,sql_type,expected",
+    [
+        ("3::int4", "int4", 3),
+        ("3.25::numeric(12,2)", "numeric(12,2)", "3.25"),
+        ("3.25::numeric", "numeric", "3.25"),
+        (
+            "12345678901234567890.123456789012345678::numeric(38,18)",
+            "numeric(38,18)",
+            "12345678901234567890.123456789012345678",
+        ),
+        ("3.25::float8", "float8", 3.25),
+        ("'3'::text", "text", "3"),
+        ("true", "bool", True),
+        ("DATE '2026-01-01'", "date", "2026-01-01"),
+        ("TIMESTAMP '2026-01-01 00:00:00'", "timestamp", "2026-01-01 00:00:00"),
+        (
+            "TIMESTAMPTZ '2026-01-01 00:00:00+00'",
+            "timestamptz",
+            "2026-01-01 00:00:00+00:00",
+        ),
+    ],
+)
+def test_postgres_native_output_types(
+    database: tuple[DataStore, str], expression: str, sql_type: str, expected: object
+) -> None:
+    from data_mcp.output import OutputColumn
+
+    store, _ = database
+    contract = (OutputColumn(name="total", sql_type=sql_type, nullable=False),)
+    result = store.query_postgres(
+        "test",
+        f"SELECT {expression} AS total",
+        timezone="UTC",
+        output_contract=contract,
+    )
+    assert result["rows"] == [[expected]]
+    assert result["column_types"] == [sql_type]
+    # Parameterized raw server cursor applies the same contract as the fixed path.
+    result = store.query_postgres(
+        "test",
+        "SELECT %(value)s::int4 AS total",
+        parameters={"value": 3},
+        output_contract=(OutputColumn(name="total", sql_type="int4", nullable=False),),
+    )
+    assert result["rows"] == [[3]]
+
+
+@pytest.mark.parametrize(
+    "sql,sql_type",
+    [
+        ("SELECT '3'::text AS total WHERE FALSE", "int4"),
+        ("SELECT NULL::int4 AS total", "int4"),
+        ("SELECT 'NaN'::numeric AS total", "numeric"),
+        ("SELECT 'Infinity'::numeric AS total", "numeric"),
+        ("SELECT '-Infinity'::float8 AS total", "float8"),
+        ("SELECT 3.25::numeric(13,2) AS total", "numeric(12,2)"),
+        ("SELECT ARRAY[1] AS total WHERE FALSE", "int4"),
+    ],
+)
+def test_postgres_output_violations(
+    database: tuple[DataStore, str], sql: str, sql_type: str
+) -> None:
+    from data_mcp.output import OutputColumn
+
+    store, _ = database
+    with pytest.raises(DataError):
+        store.query_postgres(
+            "test",
+            sql,
+            output_contract=(
+                OutputColumn(name="total", sql_type=sql_type, nullable=False),
+            ),
+        )
+
+
+def test_postgres_metric_output_contract(
+    database: tuple[DataStore, str], tmp_path: Path
+) -> None:
+    import asyncio
+    import json
+
+    from mcp import Client
+
+    from data_mcp.ontology import SemanticLayer
+    from data_mcp.server import create_server
+
+    store, schema = database
+    store.execute_postgres("test", f"INSERT INTO {schema}.items VALUES (1, 3.25)")
+    path = tmp_path.resolve() / "output.toml"
+    path.write_text(
+        """schema_version=1
+[metrics.total]
+backend="postgres"
+source="test"
+description="Synthetic typed numeric result"
+grain="one row"
+units="units"
+timezone="UTC"
+owner="synthetic-test"
+reviewed_on=2026-09-09
+expected_columns=["total"]
+"""
+        + f"sql={json.dumps(f'SELECT value AS total FROM {schema}.items')}\n"
+        + """
+[[metrics.total.output_contract]]
+name="total"
+sql_type="numeric"
+nullable=false
+"""
+    )
+    settings = store.settings.model_copy(
+        update={"ontology_file": path, "access_mode": "analysis"}
+    )
+    layer = SemanticLayer(settings)
+
+    async def run() -> None:
+        async with Client(create_server(settings)) as client:
+            result = await client.call_tool(
+                "run_metric", {"name": "total", "revision": layer.revision}
+            )
+            assert not result.is_error
+            assert result.structured_content is not None
+            assert result.structured_content["rows"] == [["3.25"]]
+            assert result.structured_content["output_contract_verified"] is True
+
+    asyncio.run(run())
+    with psycopg.connect(os.environ["DATA_MCP_TEST_DSN"], autocommit=True) as conn:
+        conn.execute(
+            sql.SQL(
+                "ALTER TABLE {}.items ALTER COLUMN value TYPE text USING value::text"
+            ).format(sql.Identifier(schema))
+        )
+    with pytest.raises(DataError, match="SQL types changed"):
+        layer.run_metric(DataStore(settings), "total", layer.revision)

@@ -13,6 +13,7 @@ from pydantic import Field, ValidationError, model_validator
 
 from .config import Settings, StrictModel
 from .data import DataStore
+from .output import OutputColumn, kind
 from .parameters import (
     PARAMETER_NAME,
     DateParameter,
@@ -47,6 +48,10 @@ class Metric(StrictModel):
         default=(), max_length=8, exclude_if=lambda value: not value
     )
 
+    output_contract: tuple[OutputColumn, ...] = Field(
+        default=(), max_length=128, exclude_if=lambda value: not value
+    )
+
     @model_validator(mode="after")
     def validate_query(self) -> Self:
         try:
@@ -76,6 +81,14 @@ class Metric(StrictModel):
                 for name in (window.start, window.end)
             ):
                 raise ValueError("Date windows require two distinct date parameters")
+        if self.output_contract:
+            if (
+                tuple(column.name for column in self.output_contract)
+                != self.expected_columns
+            ):
+                raise ValueError("Output contract must match expected columns in order")
+            for column in self.output_contract:
+                kind(column.sql_type, self.backend)
         if len(set(self.expected_columns)) != len(self.expected_columns):
             raise ValueError("Metric output columns must be unique")
         return self
@@ -184,6 +197,7 @@ class SemanticLayer:
                 metric.sql,
                 timezone=metric.timezone,
                 parameters=bound or None,
+                output_contract=metric.output_contract,
             )
         else:
             result = store.query_postgres(
@@ -191,6 +205,7 @@ class SemanticLayer:
                 metric.sql,
                 timezone=metric.timezone,
                 parameters=bound or None,
+                output_contract=metric.output_contract,
             )
         if result["truncated"]:
             raise DataError(
@@ -214,6 +229,9 @@ class SemanticLayer:
                 "submitted_sql": metric.sql,
                 "normalized_sql": executed_sql,
                 **({"parameters": supplied} if metric.parameters else {}),
+                **(
+                    {"output_contract_verified": True} if metric.output_contract else {}
+                ),
                 "started_at": started,
                 "completed_at": datetime.now(UTC).isoformat(),
                 "data_snapshot": None,

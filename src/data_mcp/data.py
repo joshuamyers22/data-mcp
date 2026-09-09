@@ -17,6 +17,7 @@ import pyarrow.parquet as _pq
 from psycopg.sql import SQL
 
 from .config import Settings
+from .output import Backend, OutputColumn, check_description, check_row
 from .parameters import BoundValue, postgres_bindings
 from .sql import DataError, parquet_query, statement
 
@@ -24,9 +25,17 @@ from .sql import DataError, parquet_query, statement
 pq: Any = _pq
 
 
-def result_rows(cursor: Any, settings: Settings) -> dict[str, Any]:
+def result_rows(
+    cursor: Any,
+    settings: Settings,
+    *,
+    output_contract: tuple[OutputColumn, ...] = (),
+    backend: Backend = "parquet",
+) -> dict[str, Any]:
     columns = [item[0] for item in cursor.description]
     result: dict[str, Any] = {"columns": columns, "rows": [], "truncated": False}
+    if output_contract:
+        result["column_types"] = check_description(cursor, output_contract, backend)
     used = len(json.dumps(result, default=str).encode())
     if used > settings.max_result_bytes:
         raise DataError("Column metadata exceeds the result byte limit")
@@ -34,6 +43,8 @@ def result_rows(cursor: Any, settings: Settings) -> dict[str, Any]:
         row = cursor.fetchone()
         if row is None:
             break
+        if output_contract:
+            check_row(row, output_contract, backend)
         # Decimal, timestamps, UUID and binary use strings; duplicate column
         # names remain intact because rows are arrays, not dictionaries.
         # JSON has no non-finite number literals. Preserve their identity as
@@ -184,6 +195,7 @@ class DataStore:
         *,
         timezone: str | None = None,
         parameters: dict[str, BoundValue] | None = None,
+        output_contract: tuple[OutputColumn, ...] = (),
     ) -> dict[str, Any]:
         query = parquet_query(sql)
         files = self.selected(root, paths)
@@ -195,6 +207,7 @@ class DataStore:
                     parameters,
                 ),
                 self.settings,
+                output_contract=output_contract,
             )
 
     def describe_parquet(self, root: str, paths: list[str]) -> dict[str, Any]:
@@ -319,6 +332,7 @@ class DataStore:
         *,
         timezone: str | None = None,
         parameters: dict[str, BoundValue] | None = None,
+        output_contract: tuple[OutputColumn, ...] = (),
     ) -> dict[str, Any]:
         tree = statement(sql, "postgres")
         query = tree.sql(dialect="postgres", comments=False)
@@ -329,10 +343,20 @@ class DataStore:
                 query, values = postgres_bindings(sql, parameters)
                 with psycopg.RawServerCursor(conn, "data_mcp") as cursor:
                     cursor.execute(SQL(cast(LiteralString, query)), values)
-                    return result_rows(cursor, self.settings)
+                    return result_rows(
+                        cursor,
+                        self.settings,
+                        output_contract=output_contract,
+                        backend="postgres",
+                    )
             with conn.cursor(name="data_mcp") as cursor:
                 cursor.execute(SQL(cast(LiteralString, query)))
-                return result_rows(cursor, self.settings)
+                return result_rows(
+                    cursor,
+                    self.settings,
+                    output_contract=output_contract,
+                    backend="postgres",
+                )
 
     def execute_postgres(self, source: str, sql: str) -> dict[str, Any]:
         tree = statement(sql, "postgres", write=True)

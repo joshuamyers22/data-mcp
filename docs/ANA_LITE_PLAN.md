@@ -168,10 +168,19 @@ nullable, array, decimal and timestamp parameters are deferred. See
 [parameter contract](METRIC_PARAMETERS.md) and
 [verification](METRIC_PARAMETERS_VERIFICATION.md).
 
-Before evaluating changing live data, add
-immutable source/snapshot identifiers and a result envelope with output types,
-completeness, provenance and result IDs. Add fixture cases for schema drift and
-nonfinite/decimal serialization.
+**Output contract status, 2026-09-09:** metrics may declare ordered native result
+types and nullable flags. Metadata is checked before fetching, including empty
+results; native scalar and finite-number checks precede JSON encoding. Supported
+decimal precision/scale drift and text-for-number substitutions fail. Mos retains
+the result's type/verification metadata in its original tool evidence. This checks
+the query output, not upstream schema constraints, domain meaning or snapshot
+identity. See [output contract](METRIC_OUTPUT_CONTRACTS.md) and
+[verification](METRIC_OUTPUT_VERIFICATION.md).
+
+Before evaluating changing live data, add immutable source/snapshot identifiers
+and freshness contracts. Nested/custom output types, source schema constraints and
+cardinality expectations remain separate work. Existing envelopes retain
+completeness, provenance and result IDs.
 
 Done when: governed definitions are useful without a model and failures are explicit.
 Do not call matching column names a complete schema-drift check.
@@ -363,8 +372,8 @@ from forty endpoint lines or the cost of installing a chart library.
 ## Deferred choices and owners
 
 Owner for domain definitions, source privileges and live rollout: Josh Myers.
-Required before relevant stage: intended schema and snapshot fixture (0–2), full
-output-type/freshness contracts and any additional parameter types (2), live analytical conformance and account
+Required before relevant stage: intended schema and snapshot fixture (0–2), broader
+output/source-type and freshness contracts plus additional parameter types (2), live analytical conformance and account
 deployment validation for the implemented bounded loop (3),
 deployment of the implemented private result storage and domain-level answer
 validation (4), proposal storage/promotion (5), held-out evaluation (6),

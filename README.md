@@ -57,7 +57,9 @@ read/write capability; `access_mode="analysis"` omits and denies mutation tools.
 For a raw analytical comparison arm, [config.ana-raw.example.toml](config.ana-raw.example.toml)
 uses the same read-only source profile with no ontology loaded.
 Promoted metrics support [typed date and filter parameters](docs/METRIC_PARAMETERS.md)
-with explicit bounds and database bindings.
+with explicit bounds and database bindings. Optional
+[output contracts](docs/METRIC_OUTPUT_CONTRACTS.md) reject changed database types,
+unexpected nulls and nonfinite values before a metric result is accepted.
 Set `ontology_file` to an absolute promoted TOML manifest path to enable semantic tools.
 It is loaded at startup and `--check` also validates it. No model SDK, paid agent,
 automatic learning or UI is added by this integration.
