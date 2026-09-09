@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 "data-mcp" = "data_mcp.cli:main"
+"data-mcp-fixture" = "data_mcp.fixture:main"
 
 [build-system]
 requires = ["hatchling==1.32.0"]

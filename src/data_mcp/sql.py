@@ -112,6 +112,10 @@ def parquet_query(sql: str) -> str:
         "EXP",
     }
     for func in tree.find_all(exp.Func):
+        # SQLGlot classifies boolean connectors as Func nodes too. Continue
+        # visiting their children so unsafe nested calls are still rejected.
+        if type(func) in (exp.And, exp.Or):
+            continue
         name = func.name.upper() if isinstance(func, exp.Anonymous) else func.sql_name()
         if name not in allowed:
             raise DataError(f"Parquet SQL function is unsupported: {name}")

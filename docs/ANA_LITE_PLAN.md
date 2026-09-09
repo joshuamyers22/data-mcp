@@ -120,6 +120,18 @@ The packaged example is synthetic; actual domain cases still require review.
 Done when: cases and labels are independently reviewable, development and holdout
 families are distinct, and data cannot drift between treatment arms.
 
+Development case-pack milestone (2026-09-09): `data-mcp-fixture` now creates and
+verifies six synthetic Parquet cases over raw and promoted stdio MCP profiles.
+Cases cover repeated order IDs, cancellations, signed returns, missing discounts,
+month boundaries and empty selections. Candidate labels are separate from the
+served root; pinned file hashes are checked before and after execution. Mos Eisley
+scripts twelve checked-answer conversations against the actual pack. This exposed
+and corrected the Parquet validator's rejection of boolean AND/OR filters while
+preserving nested function checks. These are one-family development regressions,
+not independently reviewed domain cases, held-out evaluation or a source snapshot
+guarantee. See [case pack](ANALYTICAL_CASE_PACK.md) and
+[verification](ANALYTICAL_CASE_PACK_VERIFICATION.md).
+
 ## Stage 1 — Configure and verify source access
 
 Use the existing server configuration and analysis profile. Validate mounts, cloud TLS

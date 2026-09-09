@@ -40,6 +40,12 @@ out of committed configuration and client tool arguments. For cloud databases,
 A PostgreSQL login needs only the schema/table/sequence/function privileges the
 operator intends to expose; the server never changes grants.
 
+## Synthetic analytical cases
+
+Create and verify six Parquet development cases with `data-mcp-fixture`. Both raw
+and promoted analysis use the same file; expected answers stay outside the MCP
+root. See the [case-pack guide](docs/ANALYTICAL_CASE_PACK.md).
+
 ## MCP tools
 
 Ana Lite integration adds an optional, versioned semantic manifest and three tools:
