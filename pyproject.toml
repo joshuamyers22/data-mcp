@@ -20,7 +20,7 @@ dependencies = [
     "duckdb>=1.4,<2",
     "psycopg[binary]>=3.3.5,<4",
     "sqlglot>=28,<31",
-    "pyarrow>=18,<25",
+    "pyarrow>=25.0.1,<26",
     "pytz>=2025.2,<2027", # DuckDB Python TIMESTAMPTZ result conversion.
 ]
 
