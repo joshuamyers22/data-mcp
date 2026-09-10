@@ -20,7 +20,7 @@ dependencies = [
     "duckdb>=1.4,<2",
     "psycopg[binary]>=3.3.5,<4",
     "sqlglot>=28,<31",
-    "pyarrow>=18,<25",
+    "pyarrow>=25.0.1,<26",
     "pytz>=2025.2,<2027", # DuckDB Python TIMESTAMPTZ result conversion.
 ]
 
@@ -44,7 +44,12 @@ requires = ["hatchling==1.32.0"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pyright==1.1.411", "ruff==0.16.6", "pytest>=8,<10"]
+dev = [
+    "pyright==1.1.411",
+    "ruff==0.16.6",
+    "pytest>=8,<10",
+    "pyarrow-stubs>=20,<21",
+]
 
 [tool.ruff]
 target-version = "py312"

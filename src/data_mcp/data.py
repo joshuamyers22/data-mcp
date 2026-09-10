@@ -440,13 +440,20 @@ class DataStore:
                         raise DataError("Existing JSON file cannot be read") from None
                     if not isinstance(existing_rows, list):
                         raise DataError("Existing .json file must contain a row array")
-                    existing = pa.Table.from_pylist(existing_rows)
+                    existing_values = cast(list[Any], existing_rows)
+                    if not all(isinstance(row, dict) for row in existing_values):
+                        raise DataError("Existing .json file must contain a row array")
+                    existing_records = cast(list[dict[str, Any]], existing_values)
+                    existing = pa.Table.from_pylist(existing_records)
                 else:
                     existing = pjson.read_json(target)
                 if set(existing.schema.names) != set(incoming.schema.names):
                     raise DataError("Append columns must match the existing file")
-                incoming = incoming.select(existing.schema.names).cast(
-                    existing.schema, safe=True
+                incoming = cast(
+                    pa.Table,
+                    cast(Any, incoming)
+                    .select(existing.schema.names)
+                    .cast(existing.schema, safe=True),
                 )
                 table = pa.concat_tables([existing, incoming])
             fd, name = tempfile.mkstemp(prefix=".data-mcp-", dir=target.parent)
@@ -534,8 +541,11 @@ class DataStore:
                     if set(existing.schema_arrow.names) != keys:
                         raise DataError("Append columns must match the existing file")
                     incoming = pa.Table.from_pylist(records)
-                    table = incoming.select(existing.schema_arrow.names).cast(
-                        existing.schema_arrow, safe=True
+                    table = cast(
+                        pa.Table,
+                        cast(Any, incoming)
+                        .select(existing.schema_arrow.names)
+                        .cast(existing.schema_arrow, safe=True),
                     )
                 else:
                     table = pa.Table.from_pylist(records)

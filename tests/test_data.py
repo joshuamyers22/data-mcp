@@ -67,6 +67,17 @@ def test_file_format_allowlist_and_mixed_query(tmp_path: Path) -> None:
     }
 
 
+def test_json_append_rejects_existing_non_object_rows(tmp_path: Path) -> None:
+    store = DataStore(Settings(files={"local": FileRoot(path=tmp_path)}))
+    target = tmp_path / "rows.json"
+    target.write_text("[1]", encoding="utf-8")
+
+    with pytest.raises(DataError, match="row array"):
+        store.write_file("local", target.name, '[{"id":2}]', "append")
+
+    assert target.read_text(encoding="utf-8") == "[1]"
+
+
 def test_failed_create_and_append_preserve_file(store: DataStore) -> None:
     store.write_parquet("raw", "a.parquet", '[{"id":1}]')
     target = store.path("raw", "a.parquet")
