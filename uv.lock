@@ -260,7 +260,7 @@ requires-dist = [
     { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35,<2" },
     { name = "duckdb", specifier = ">=1.4,<2" },
     { name = "mcp", specifier = ">=2,<3" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.5,<4" },
     { name = "pyarrow", specifier = ">=18,<25" },
     { name = "pymongo", marker = "extra == 'all'", specifier = ">=4.10,<5" },
     { name = "pymongo", marker = "extra == 'mongodb'", specifier = ">=4.10,<5" },
