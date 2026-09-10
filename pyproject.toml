@@ -1,10 +1,20 @@
 [project]
 name = "data-mcp"
-version = "0.1.0"
-description = "MCP read/write access to local Parquet and local or cloud PostgreSQL"
+version = "0.2.0"
+description = "A secure MCP server for tabular files, databases, MongoDB, and S3"
 readme = "README.md"
 requires-python = ">=3.12"
-license = "LicenseRef-Proprietary"
+license = "MIT"
+authors = [{ name = "Joshua Myers" }]
+keywords = ["mcp", "data", "postgresql", "mysql", "mongodb", "s3"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database :: Database Engines/Servers",
+]
 dependencies = [
     "mcp>=2,<3",
     "duckdb>=1.4,<2",
@@ -13,6 +23,17 @@ dependencies = [
     "pyarrow>=18,<25",
     "pytz>=2025.2,<2027", # DuckDB Python TIMESTAMPTZ result conversion.
 ]
+
+[project.optional-dependencies]
+mysql = ["pymysql>=1.1,<2"]
+mongodb = ["pymongo>=4.10,<5"]
+s3 = ["boto3>=1.35,<2"]
+all = ["pymysql>=1.1,<2", "pymongo>=4.10,<5", "boto3>=1.35,<2"]
+
+[project.urls]
+Homepage = "https://github.com/joshuamyers22/data-mcp"
+Repository = "https://github.com/joshuamyers22/data-mcp"
+Issues = "https://github.com/joshuamyers22/data-mcp/issues"
 
 [project.scripts]
 "data-mcp" = "data_mcp.cli:main"

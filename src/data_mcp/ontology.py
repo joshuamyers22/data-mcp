@@ -23,14 +23,14 @@ from .parameters import (
     postgres_bindings,
     validate_values,
 )
-from .sql import DataError, parquet_query, statement
+from .sql import DataError, file_query, statement
 
 MAX_CATALOG_BYTES = 65536
 NAME = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 
 class Metric(StrictModel):
-    backend: Literal["postgres", "parquet"]
+    backend: Literal["postgres", "file", "parquet"]
     source: str = Field(min_length=1, max_length=128)
     paths: tuple[str, ...] = ()
     description: str = Field(min_length=1, max_length=2048)
@@ -58,7 +58,7 @@ class Metric(StrictModel):
             ZoneInfo(self.timezone)
         except (ZoneInfoNotFoundError, ValueError):
             raise ValueError("Metric timezone must be a known IANA timezone") from None
-        if self.backend == "parquet":
+        if self.backend in {"file", "parquet"}:
             if not self.paths:
                 raise ValueError("Parquet metrics require relative paths")
             for path in self.paths:
@@ -66,10 +66,10 @@ class Metric(StrictModel):
                     raise ValueError(
                         "Metric paths must be inside their configured root"
                     )
-            parquet_query(self.sql)
+            file_query(self.sql)
         else:
             if self.paths:
-                raise ValueError("PostgreSQL metrics cannot specify Parquet paths")
+                raise ValueError("PostgreSQL metrics cannot specify file paths")
             statement(self.sql, "postgres")
         if any(not PARAMETER_NAME.fullmatch(name) for name in self.parameters):
             raise ValueError("Use lowercase parameter names with underscores")
@@ -126,9 +126,12 @@ class SemanticLayer:
                 "Cannot load semantic manifest; check format and access"
             ) from None
         for metric in self._manifest.metrics.values():
-            sources = (
-                settings.parquet if metric.backend == "parquet" else settings.postgres
-            )
+            if metric.backend == "file":
+                sources = settings.files
+            elif metric.backend == "parquet":
+                sources = settings.parquet
+            else:
+                sources = settings.postgres
             if metric.source not in sources:
                 raise DataError("A semantic metric references an unconfigured source")
         self.revision = hashlib.sha256(raw).hexdigest()
@@ -181,8 +184,8 @@ class SemanticLayer:
         supplied = parameters if parameters is not None else {}
         bound = validate_values(metric.parameters, metric.date_windows, supplied)
         executed_sql = (
-            parquet_query(metric.sql)
-            if metric.backend == "parquet"
+            file_query(metric.sql)
+            if metric.backend in {"file", "parquet"}
             else statement(metric.sql, "postgres").sql(
                 dialect="postgres", comments=False
             )
@@ -190,8 +193,11 @@ class SemanticLayer:
         if bound and metric.backend == "postgres":
             executed_sql, _ = postgres_bindings(metric.sql, bound)
         started = datetime.now(UTC).isoformat()
-        if metric.backend == "parquet":
-            result = store.query_parquet(
+        if metric.backend in {"file", "parquet"}:
+            query = (
+                store.query_files if metric.backend == "file" else store.query_parquet
+            )
+            result = query(
                 metric.source,
                 list(metric.paths),
                 metric.sql,

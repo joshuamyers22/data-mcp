@@ -11,7 +11,7 @@ from pydantic import Field, StrictBool
 from .config import StrictModel
 from .sql import DataError
 
-Backend = Literal["parquet", "postgres"]
+Backend = Literal["file", "parquet", "postgres"]
 Kind = Literal[
     "integer",
     "float",
@@ -68,10 +68,10 @@ class OutputColumn(StrictModel):
 
 
 def kind(sql_type: str, backend: Backend) -> Kind:
-    known = (DUCK_TYPES if backend == "parquet" else PG_TYPES).get(sql_type)
+    known = (PG_TYPES if backend == "postgres" else DUCK_TYPES).get(sql_type)
     if known is not None:
         return known
-    if backend == "parquet":
+    if backend != "postgres":
         match = re.fullmatch(r"DECIMAL\(([0-9]+),([0-9]+)\)", sql_type)
         if match and 1 <= int(match[1]) <= 38 and 0 <= int(match[2]) <= int(match[1]):
             return "decimal"
@@ -90,7 +90,7 @@ def check_description(
         raise DataError("Metric output columns differ from their contract")
     actual: list[str] = []
     for column, expected in zip(columns, contract, strict=True):
-        if backend == "parquet":
+        if backend != "postgres":
             name = str(column[1])
         else:
             info = cursor.adapters.types.get(column.type_code)

@@ -1,0 +1,64 @@
+name: data-mcp-integration
+
+services:
+  postgres:
+    image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+    environment:
+      POSTGRES_PASSWORD: data_mcp_test_only
+      POSTGRES_DB: data_mcp_test
+    ports:
+      - "${DATA_MCP_TEST_POSTGRES_PORT:-55432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mysql:
+    image: mysql:8.4@sha256:3466ba4a4828aa8d46fb7c3bc16b67b781c98413cf4ea0fac6feaa6e881faa26
+    environment:
+      MYSQL_ROOT_PASSWORD: data_mcp_test_only
+      MYSQL_DATABASE: data_mcp_test
+    ports:
+      - "${DATA_MCP_TEST_MYSQL_PORT:-43306}:3306"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -pdata_mcp_test_only",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongodb:
+    image: mongo:8.0@sha256:4a0f30875898413139bec44c73c02a05fed172578de65b644dcdcee143ae7306
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
+    ports:
+      - "${DATA_MCP_TEST_MONGODB_PORT:-47017}:27017"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 2)'",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  s3:
+    image: motoserver/moto:5.1.13@sha256:0503bdc569e122966fc5fceef43d4a9562ed21e4091cf865801dba90cbb62ea5
+    ports:
+      - "${DATA_MCP_TEST_S3_PORT:-45000}:5000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/moto-api/')",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20

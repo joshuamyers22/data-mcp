@@ -21,6 +21,10 @@ def test_stdio_discovery_write_query(tmp_path: Path) -> None:
         async with Client(params) as client:
             tools = await client.list_tools()
             assert {t.name for t in tools.tools} >= {
+                "query_files",
+                "query_mysql",
+                "query_mongodb",
+                "query_s3",
                 "query_parquet",
                 "execute_postgres",
             }

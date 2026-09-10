@@ -1,15 +1,18 @@
 # Project Brief
 
-- Problem and affected users: Mos Eisley needs to discover, inspect, read, and write
-  HDD Parquet files and local/cloud PostgreSQL data through one MCP server.
-- Measurable success criteria: real MCP roundtrips exercise Parquet creation,
-  SQL reads, appends, replacement, PostgreSQL reads and committed DML; failed
-  writes preserve existing data; template lint, strict typing, tests and build pass.
+- Problem and affected users: MCP clients need one controlled interface to discover,
+  inspect, read, and optionally write local tabular files, SQL databases, MongoDB,
+  and S3 data across local and hosted deployments.
+- Measurable success criteria: MCP roundtrips exercise generic file discovery,
+  creation, SQL reads, append/replacement, and database/object/document connector
+  surfaces; failed writes preserve existing data; lint, strict typing, tests, export,
+  and build pass.
 - Explicit non-goals: remote MCP hosting, database administration/DDL, arbitrary
   host-file access, automatic credentials discovery, cross-source transactions,
   automatic retries of writes, and implementation of Mos Eisley's general client.
 - Runtime/deployment environment: Python 3.12+, macOS/Linux, local stdio child of
-  an MCP client. The PostgreSQL endpoint may be local or cloud hosted.
+  an MCP client. PostgreSQL, MySQL, MongoDB and S3-compatible endpoints may be local
+  or hosted; their optional package extras are loaded only when used.
 - Data classification and retention: private source data; no data or SQL in logs.
   This server creates no query history. The client owns retention of returned data.
 - Availability and recovery objectives: no service SLO for this local development
@@ -17,15 +20,19 @@
   is atomic per file; PostgreSQL operations commit or roll back per invocation.
   Backup/restore and production HDD throughput require operator validation.
 - Capacity: default 500 returned rows, 256 KiB result data, 1 MiB row-write payload,
-  10,000 selected files, 512 MiB DuckDB working memory, 30-second SQL timeout.
-  Parquet writes stream existing rows but have no hard disk-I/O deadline.
+  10,000 selected files/objects, 256 MiB aggregate S3 download or text-file rewrite,
+  512 MiB DuckDB working memory, and 30-second query/network timeout. File writes
+  have no hard disk-I/O deadline.
 - Top failure or abuse scenarios: path escape, partial file replacement, failed
   transaction, oversized result, retry of a write with an uncertain commit outcome.
 - Owner: Josh Myers.
-- User-directed scope: both backends permit writes; a configured source can be
-  narrowed to read-only. Replacement is an explicit tool argument.
-- Storage consistency: cooperating MCP writers use a per-file process lock;
-  external writers must coordinate or use separate immutable partition filenames.
+- User-directed scope: every mutable backend can be configured read-only and the
+  analysis profile removes all mutation tools. Replacement and unfiltered MongoDB
+  bulk changes require explicit arguments.
+- Storage consistency: cooperating local-file writers use a per-file process lock;
+  external writers must coordinate or use immutable partition names. S3 create uses
+  a conditional put and replace is one-object publication; cross-source transactions
+  and S3 append are unsupported.
 
 ## Acceptance evidence
 

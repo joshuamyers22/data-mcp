@@ -1,6 +1,6 @@
 # Ana Lite integrated with Data MCP
 
-Revised 2026-09-06 from `/Users/josh/Downloads/ana-lite-plan.md`.
+Revised 2026-09-06 from the initial private design draft.
 [Adversarial findings](reviews/ana-lite-adversarial-review.md) provide evidence and
 acceptance criteria; [verification](reviews/ana-lite-verification.md) records actual
 checks. This document distinguishes implemented infrastructure from future agent/UI

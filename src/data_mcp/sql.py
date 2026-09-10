@@ -51,7 +51,7 @@ def statement(
     return tree
 
 
-def parquet_query(sql: str) -> str:
+def file_query(sql: str) -> str:
     tree = statement(sql, "duckdb")
     names = {"data"} | {cte.alias.lower() for cte in tree.find_all(exp.CTE)}
     for table in tree.find_all(exp.Table):
@@ -61,7 +61,7 @@ def parquet_query(sql: str) -> str:
             or table.db
             or table.catalog
         ):
-            raise DataError("Query only the selected Parquet files as table 'data'")
+            raise DataError("Query only the selected files as table 'data'")
     # Dynamic SQL functions can bypass table validation. Only known scalar and
     # aggregate functions are accepted; no arbitrary anonymous functions/macros.
     allowed = {
@@ -118,5 +118,10 @@ def parquet_query(sql: str) -> str:
             continue
         name = func.name.upper() if isinstance(func, exp.Anonymous) else func.sql_name()
         if name not in allowed:
-            raise DataError(f"Parquet SQL function is unsupported: {name}")
+            raise DataError(f"File SQL function is unsupported: {name}")
     return tree.sql(dialect="duckdb", comments=False)
+
+
+def parquet_query(sql: str) -> str:
+    """Compatibility alias for callers using the original Parquet API."""
+    return file_query(sql)

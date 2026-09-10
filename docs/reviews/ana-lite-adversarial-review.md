@@ -1,6 +1,6 @@
 # Ana Lite: adversarial plan review
 
-Reviewed 2026-09-06 against `/Users/josh/Downloads/ana-lite-plan.md` (441 lines;
+Reviewed 2026-09-06 against the initial private design draft (441 lines;
 SHA-256 `fdfa44b59ca33a18bc65319dbaba79cd7413abf6f616e08fd0d98e40475177d5`) and
 `src/data_mcp/{config,data,server,sql}.py`. Source line references below refer to
 that original, unchanged plan. Review follows the production template's adversarial

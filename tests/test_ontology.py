@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from mcp import Client
 
-from data_mcp.config import ParquetRoot, Settings
+from data_mcp.config import FileRoot, ParquetRoot, Settings
 from data_mcp.data import DataStore
 from data_mcp.ontology import SemanticLayer
 from data_mcp.server import create_server
@@ -54,6 +54,24 @@ def test_governed_metric_executes_and_attributes_result(tmp_path: Path) -> None:
     assert result["submitted_sql"] == "SELECT sum(value) AS total FROM data"
     assert result["normalized_sql"] == "SELECT SUM(value) AS total FROM data"
     assert layer.list_metrics()["metrics"]["total"]["source"] == "raw"
+
+
+def test_governed_metric_supports_generic_file_source(tmp_path: Path) -> None:
+    path = manifest(tmp_path)
+    path.write_text(
+        path.read_text()
+        .replace('backend="parquet"', 'backend="file"')
+        .replace('paths=["rows.parquet"]', 'paths=["rows.csv"]')
+    )
+    settings = Settings(
+        files={"raw": FileRoot(path=tmp_path, formats=("csv",))}, ontology_file=path
+    )
+    store = DataStore(settings)
+    store.write_file("raw", "rows.csv", '[{"value":2},{"value":3}]')
+    layer = SemanticLayer(settings)
+    result = layer.run_metric(store, "total", layer.revision)
+    assert result["backend"] == "file"
+    assert result["rows"] == [[5]]
 
 
 def test_snapshot_and_stale_revision(tmp_path: Path) -> None:
@@ -146,7 +164,11 @@ def test_analysis_profile_enforces_readonly_without_changing_default(
             names = {t.name for t in tools.tools}
             assert "run_metric" in names
             assert "write_parquet" not in names
+            assert "write_file" not in names
             assert "execute_postgres" not in names
+            assert "execute_mysql" not in names
+            assert "insert_mongodb" not in names
+            assert "write_s3" not in names
             context = await client.call_tool("get_semantic_context")
             assert context.structured_content is not None
             assert context.structured_content["revision"] == layer.revision

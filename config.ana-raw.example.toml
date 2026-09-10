@@ -4,9 +4,10 @@ max_rows = 500
 max_result_bytes = 262144
 query_timeout_seconds = 30
 
-[parquet.raw]
-path = "/Volumes/raw/parquet"
+[files.raw]
+path = "/absolute/path/to/data"
 writable = false
+formats = ["parquet", "csv", "tsv", "json"]
 
 [postgres.local]
 dsn_env = "ANA_LOCAL_READ_DSN"

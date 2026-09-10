@@ -18,6 +18,53 @@ missing external evidence. No paid model calls, cloud deployment or live writes.
 The live HDD and user PostgreSQL instances are not connected; fixture evidence
 does not establish production readiness. Final development evidence follows.
 
+## Disposable service integration result — 2026-09-10
+
+The checked-in Compose workflow brought pinned PostgreSQL 17, MySQL 8.4,
+MongoDB 8.0, and Moto 5.1.13 S3-compatible services to healthy state. Running
+`make integration-test` against that isolated stack completed with **162 passed**
+and no skips. The stack and its disposable resources were removed afterward.
+
+The new service-backed cases verify MySQL commit, rollback, decimal conversion,
+update/delete, and transaction-enforced read-only behavior; heterogeneous MongoDB
+insert/find/update/delete behavior; and S3 conditional create, collision handling,
+replace, prefix selection, and CSV/Parquet/JSON Lines roundtrips. Unique table,
+collection, and bucket names isolate every test.
+
+After the integration pass, Ruff and formatting passed, strict Pyright reported
+zero errors or warnings, the service-free suite reported **134 passed, 28 skipped**,
+and the 0.2.0 wheel and source distribution rebuilt successfully. The all-extras
+runtime export produced the same SHA-256 digest on consecutive frozen exports, and
+the OSV audit reported no known vulnerabilities or adverse project statuses.
+The CI workflow now provisions the four service types and runs these integration
+cases during the normal quality job.
+
+This adds real open-source driver and wire-protocol evidence, not public-cloud
+provider evidence. Managed TLS/CA chains, IAM policies, MongoDB Atlas behavior,
+provider-specific MySQL/PostgreSQL variants, latency, quotas, and billing remain
+deployment checks. No production or user-owned data service was contacted.
+
+## Multi-source public-package result — 2026-09-09
+
+The 0.2 connector expansion passed Ruff, strict Pyright with zero errors/warnings,
+and the full local suite: **134 passed, 23 skipped**. The skipped tests require a
+disposable live PostgreSQL instance and retain the PostgreSQL 17 evidence recorded
+below and in later metric verification records. No live MySQL, MongoDB, S3, or
+production source was contacted.
+
+The evidence-changing passes covered:
+
+| Pass | Evidence | Residual limit |
+|---|---|---|
+| Multi-format files | Create/append/replace and DuckDB schema/query roundtrips for Parquet, CSV, TSV, JSON arrays, and JSON Lines; mixed-format and format-allowlist rejection | Large text appends rewrite the file and depend on the configured rewrite ceiling |
+| Connector behavior | Isolated MySQL TLS/transaction fakes, MongoDB bounded CRUD and JavaScript/empty-filter guards, S3 conditional create/query/replace with key-boundary validation | No live provider authentication, TLS, IAM, dialect, latency, or billing evidence |
+| Public artifact | Locked all-extras install, stable hash-pinned runtime export, 0.2 wheel/sdist build, installed-wheel MCP discovery in analysis mode, MIT metadata, and OSV audit with no known findings | No package or container was published; target-host container smoke remains open |
+
+The original Parquet API remains exercised alongside the generic file API. S3
+objects are streamed into a private staging directory with both declared and actual
+byte enforcement; DuckDB network access and extension loading remain disabled.
+Review stopped after the full gate, artifact smoke, and dependency audit passed.
+
 ## Final development result — 2026-09-06
 
 `make check build`, with `DATA_MCP_TEST_DSN` pointing at an isolated local PostgreSQL

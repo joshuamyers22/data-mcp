@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pyarrow as pa
 import pytest
 
-from data_mcp.config import ParquetRoot, Settings
+from data_mcp.config import FileRoot, ParquetRoot, Settings
 from data_mcp.data import DataStore
 from data_mcp.sql import DataError, parquet_query, statement
 
@@ -32,6 +32,39 @@ def test_create_append_replace_and_schema(store: DataStore) -> None:
     )
     assert store.query_parquet("raw", ["."], "SELECT id FROM data")["rows"] == [[3]]
     assert len(store.files("raw")["files"]) == 1
+
+
+@pytest.mark.parametrize("extension", ["csv", "tsv", "json", "jsonl"])
+def test_generic_file_formats(tmp_path: Path, extension: str) -> None:
+    store = DataStore(Settings(files={"local": FileRoot(path=tmp_path)}))
+    path = f"rows.{extension}"
+    created = store.write_file("local", path, '[{"id":1,"label":"a"}]')
+    assert created["format"] == ("json" if extension.startswith("json") else extension)
+    store.write_file("local", path, '[{"id":2,"label":"b"}]', "append")
+    result = store.query_files(
+        "local", [path], "SELECT sum(id), count(label) FROM data"
+    )
+    assert result["rows"] == [[3, 2]]
+    schema = store.describe_files("local", [path])
+    assert {row[0] for row in schema["rows"]} == {"id", "label"}
+    store.write_file("local", path, '[{"id":3,"label":"c"}]', "replace")
+    assert store.query_files("local", [path], "SELECT id FROM data")["rows"] == [[3]]
+
+
+def test_file_format_allowlist_and_mixed_query(tmp_path: Path) -> None:
+    store = DataStore(
+        Settings(files={"local": FileRoot(path=tmp_path, formats=("csv", "json"))})
+    )
+    store.write_file("local", "a.csv", '[{"id":1}]')
+    store.write_file("local", "b.json", '[{"id":2}]')
+    with pytest.raises(DataError, match="one format"):
+        store.query_files("local", ["a.csv", "b.json"], "SELECT * FROM data")
+    with pytest.raises(DataError, match="not enabled"):
+        store.write_file("local", "c.parquet", '[{"id":3}]')
+    assert {item["format"] for item in store.files("local")["files"]} == {
+        "csv",
+        "json",
+    }
 
 
 def test_failed_create_and_append_preserve_file(store: DataStore) -> None:

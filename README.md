@@ -1,195 +1,210 @@
 # Data MCP
 
-Read/write MCP server for HDD Parquet files and local or cloud PostgreSQL databases.
-Runs as a local stdio subprocess on macOS or Linux. Database connections can reach
-remote hosts while Parquet access stays on the machine running the server.
+Data MCP is a local [Model Context Protocol](https://modelcontextprotocol.io/)
+server for controlled access to data files, databases, document stores, and object
+storage. It gives MCP clients one bounded, auditable tool surface without putting
+credentials in tool arguments.
 
-Generated with `production-project-template`'s `python-cli` archetype at commit
-`3d467040ba760efe9795f67f07d5a2ccf364282b`. Includes its governance, agent memory,
-pinned CI actions, release/SBOM workflow, Ruff, strict Pyright, and locked dependencies.
+Supported sources:
 
-## Setup
+- local Parquet, CSV, TSV, JSON, and JSON Lines files;
+- PostgreSQL and compatible hosted services;
+- MySQL and compatible hosted services;
+- MongoDB, including hosted MongoDB-compatible services; and
+- Amazon S3 and S3-compatible object stores containing supported tabular files.
 
-Requires Python 3.12+ and uv:
+The server runs over local stdio on macOS or Linux. Network connections originate
+from the machine running the server. Data MCP is alpha software: use narrowly
+privileged credentials, read-only sources where possible, and backups for writable
+data.
+
+## Install
+
+Data MCP requires Python 3.12 or newer. Until a PyPI release is available, install
+from a checkout:
 
 ```sh
-cd ~/Projects/data-mcp
-make setup
+git clone https://github.com/joshuamyers22/data-mcp.git
+cd data-mcp
+uv sync --frozen --all-extras
 cp config.example.toml config.toml
-# Edit root paths and database credential variable names in config.toml.
-# Populate DATA_MCP_LOCAL_DSN and DATA_MCP_CLOUD_DSN in the launch environment.
 uv run --frozen data-mcp --config "$PWD/config.toml" --check
-uv run --frozen data-mcp --config "$PWD/config.toml"
 ```
 
-`--check` validates configuration and reports whether roots exist and credential
-variables are set. It does not connect to databases. The last command waits for
-an MCP client on stdin; stdout is protocol traffic.
+Use only the extras you need when installing the wheel: `mysql`, `mongodb`, `s3`,
+or `all`. PostgreSQL and local-file support are included in the base package.
 
-Each `[parquet.NAME]` defines an absolute root and `writable` flag. Each
-`[postgres.NAME]` defines a `dsn_env` variable name, `writable` flag and `sslmode`.
-Both default to writable, as requested. Configuration rejects unknown fields.
-Missing sources do not prevent other sources from working.
+## Configure
 
-DSN shape: `postgresql://USER:PASSWORD@HOST:5432/DATABASE`. Percent-encode reserved
-characters in URI components, or use libpq keyword syntax. Keep real credentials
-out of committed configuration and client tool arguments. For cloud databases,
-`sslmode="verify-full"` enforces certificate and hostname verification; supply
-`sslrootcert=/absolute/path/to/ca.pem` in the DSN if your provider requires its CA.
-`sslmode="disable"` is an explicit option for a trusted local connection.
-A PostgreSQL login needs only the schema/table/sequence/function privileges the
-operator intends to expose; the server never changes grants.
+Configuration is strict TOML. Source names are public handles presented to the MCP
+client; passwords and connection URIs stay in environment variables.
 
-## Synthetic analytical cases
+```toml
+access_mode = "read_write" # Use "analysis" to disable every mutation tool.
+max_rows = 500
+max_result_bytes = 262144
+max_write_bytes = 1048576
+max_files = 10000
+max_download_bytes = 268435456
+max_rewrite_bytes = 268435456
+query_timeout_seconds = 30
 
-Create and verify six Parquet development cases with `data-mcp-fixture`. Both raw
-and promoted analysis use the same file; expected answers stay outside the MCP
-root. See the [case-pack guide](docs/ANALYTICAL_CASE_PACK.md).
+[files.local]
+path = "/absolute/path/to/data"
+writable = false
+formats = ["parquet", "csv", "tsv", "json"]
 
-## MCP tools
+[postgres.analytics]
+dsn_env = "DATA_MCP_POSTGRES_DSN"
+writable = false
+sslmode = "verify-full"
 
-Ana Lite integration adds an optional, versioned semantic manifest and three tools:
-`get_semantic_context`, `list_metrics`, and `run_metric`. See the
-[review and revised plan](docs/ANA_LITE_PLAN.md),
-[15 adversarial findings](docs/reviews/ana-lite-adversarial-review.md), and
-[analysis configuration](config.ana.example.toml). The normal profile keeps full
-read/write capability; `access_mode="analysis"` omits and denies mutation tools.
-For a raw analytical comparison arm, [config.ana-raw.example.toml](config.ana-raw.example.toml)
-uses the same read-only source profile with no ontology loaded.
-Promoted metrics support [typed date and filter parameters](docs/METRIC_PARAMETERS.md)
-with explicit bounds and database bindings. Optional
-[output contracts](docs/METRIC_OUTPUT_CONTRACTS.md) reject changed database types,
-unexpected nulls and nonfinite values before a metric result is accepted.
-Set `ontology_file` to an absolute promoted TOML manifest path to enable semantic tools.
-It is loaded at startup and `--check` also validates it. No model SDK, paid agent,
-automatic learning or UI is added by this integration.
+[mysql.warehouse]
+dsn_env = "DATA_MCP_MYSQL_DSN"
+writable = false
+tls = true
 
-| Tool | Operation |
-|---|---|
-| `list_sources` | Names, write permissions, mount/credential availability hints |
-| `list_parquet` | Relative Parquet file paths and sizes under a directory |
-| `describe_parquet` | Combined schema and Hive partition columns |
-| `query_parquet` | DuckDB SELECT over chosen files/directories as table `data` |
-| `write_parquet` | Create, append to, or explicitly replace a Parquet file |
-| `list_postgres_tables` | Accessible tables and views in a named database |
-| `describe_postgres` | Columns, types, nullability and defaults |
-| `query_postgres` | SELECT in a read-only transaction |
-| `execute_postgres` | Commit one INSERT, UPDATE or DELETE; return affected rows |
+[mongodb.documents]
+uri_env = "DATA_MCP_MONGODB_URI"
+database = "analytics"
+writable = false
+tls = true
 
-Example Parquet query arguments:
-
-```json
-{
-  "root": "raw",
-  "paths": ["orats/dt=2026-09-04"],
-  "sql": "SELECT ticker, AVG(iv) AS mean_iv FROM data GROUP BY ticker"
-}
+[s3.lake]
+bucket = "example-data-bucket"
+prefix = "datasets"
+region = "us-east-1"
+writable = false
+formats = ["parquet", "csv", "json"]
 ```
 
-Paths select files or directories recursively; overlapping selections are deduplicated.
-Queries allow SELECTs, CTEs, joins between those CTEs, and common analytical functions.
-File-reading/table functions, dynamic SQL, external URLs, extensions, and other
-host files cannot be selected through SQL. See `src/data_mcp/sql.py` for the function
-subset. Narrow to date partitions for large HDD datasets.
+Example credential variables:
 
-Example Parquet write arguments:
-
-```json
-{
-  "root": "raw",
-  "path": "derived/dt=2026-09-06/part-001.parquet",
-  "rows_json": "[{\"ticker\":\"ABC\",\"value\":12.5}]",
-  "mode": "create"
-}
+```sh
+export DATA_MCP_POSTGRES_DSN='postgresql://user:password@host:5432/database'
+export DATA_MCP_MYSQL_DSN='mysql://user:password@host:3306/database'
+export DATA_MCP_MONGODB_URI='mongodb+srv://user:password@cluster.example/database'
 ```
 
-`create` refuses an existing file. `append` creates a missing file or streams the
-existing file into a replacement with new rows; existing columns and types must
-match, and unsafe casts fail. `replace` explicitly replaces all rows of an existing
-file. A new file infers Arrow types from JSON; JSON floating-point values are not
-an exact-decimal input format. Prefer new partition filenames for bulk raw data.
-These tools write bounded row payloads, not arbitrary-size bulk-ingest streams.
+Percent-encode reserved URI characters. For MySQL, add `?ssl_ca=/path/to/ca.pem`
+when the server certificate chains to a private CA. PostgreSQL accepts
+`sslrootcert=/path/to/ca.pem` in its DSN. S3 uses boto3's standard AWS credential
+chain; `region` and an optional HTTPS `endpoint_url` belong in TOML, never secret
+keys. A local HTTP-compatible endpoint requires
+`allow_insecure_endpoint=true` explicitly.
 
-Writes finish a same-directory temporary file before atomic publication. File locks
-serialize cooperating MCP writers. Replacement and append require external ingestion
-writers to coordinate; this is not an OS sandbox against a hostile local process.
-Only one file is atomic, not a whole directory or multiple sources. Original backups
-and database PITR remain the operator's responsibility.
+`--check` validates configuration and reports source/credential availability without
+connecting to a database or object store. Unknown fields and relative local roots
+are rejected.
 
-PostgreSQL SQL uses the server's native dialect and configured role privileges.
-Administrative SQL, multiple statements and `RETURNING` in writes are unsupported.
-Failed statements roll back. Successful writes return after commit. Never retry a
-write automatically: a disconnect can happen after commit and before its response.
-Database functions, triggers and custom types execute under database privileges;
-a SELECT restriction is not a substitute for role and function grants.
+## Connect an MCP client
 
-Results contain `columns`, array-valued `rows`, and `truncated`. Default query
-limits are 500 rows and 256 KiB of serialized result data. Use SQL filters/aggregates
-when truncated. Decimals, timestamps, UUIDs, binary values and nonfinite numbers serialize as strings.
-MCP framing and SDK structured/text copies add overhead beyond the query byte budget.
-These output limits do not bound the size of an individual database cell in memory.
-DuckDB has a 512 MiB working-memory setting, two threads and disabled disk spill;
-SQL interruption defaults to 30 seconds. PostgreSQL has statement/lock/connect
-limits. HDD traversal and writes do not have hard OS-level timeouts. Two operations
-run concurrently; client cancellation does not abort an already-running write.
-
-## Connecting Mos Eisley
-
-Mos Eisley's `feat/data-mcp-client` integration now provides explicit `mcp-list`
-and `mcp-call` commands and a dispatcher for its canonical agent loop. See the
-[connection guide](docs/MOS_EISLEY.md) for read/write and Ana Lite analysis setup.
-Paid model and critic workflows still require their own multi-turn integration.
-
-The server launch contract is:
-
-```text
-command: /Users/josh/Projects/data-mcp/.venv/bin/data-mcp
-args: ["--config", "/Users/josh/Projects/data-mcp/config.toml"]
-environment allowlist: DATA_MCP_LOCAL_DSN, DATA_MCP_CLOUD_DSN
-capabilities: local file read/write, database read/write, network for cloud PostgreSQL
-```
-
-The server's write annotations are descriptive. The Mos Eisley client config
-explicitly classifies each allowed tool and requires `allow_writes` for mutation
-tools. Database grants and source permissions remain authoritative.
-
-For clients using the common JSON configuration convention:
+Start Data MCP as a stdio child process. A typical MCP client configuration is:
 
 ```json
 {
   "mcpServers": {
     "data": {
-      "command": "/Users/josh/Projects/data-mcp/.venv/bin/data-mcp",
-      "args": ["--config", "/Users/josh/Projects/data-mcp/config.toml"]
+      "command": "/absolute/path/to/data-mcp/.venv/bin/data-mcp",
+      "args": ["--config", "/absolute/path/to/data-mcp/config.toml"]
     }
   }
 }
 ```
 
-Arrange credential environment forwarding through your client's supported mechanism.
-Mount the real HDD and set real database credentials before expecting live access.
+Forward only the credential variables used by the configured sources. The exact
+environment allowlist mechanism depends on the client.
 
-## Verification and operations
+## Tools
 
-```sh
-make check
-make build
-# Optional local integration tests: set DATA_MCP_TEST_DSN to a disposable DB.
-uv run --frozen pytest -q tests/test_postgres.py
+| Source | Read tools | Write tools |
+|---|---|---|
+| All | `list_sources` | — |
+| Local files | `list_files`, `describe_files`, `query_files` | `write_file` |
+| PostgreSQL | `list_postgres_tables`, `describe_postgres`, `query_postgres` | `execute_postgres` |
+| MySQL | `list_mysql_tables`, `describe_mysql`, `query_mysql` | `execute_mysql` |
+| MongoDB | `list_mongodb_collections`, `query_mongodb` | `insert_mongodb`, `update_mongodb`, `delete_mongodb` |
+| S3 | `list_s3_objects`, `describe_s3`, `query_s3` | `write_s3` |
+
+Local and S3 file queries expose selected files as the DuckDB table `data`:
+
+```json
+{
+  "root": "local",
+  "paths": ["sales/year=2026/part-001.csv"],
+  "sql": "SELECT region, SUM(revenue) FROM data GROUP BY region"
+}
 ```
 
-PostgreSQL tests create and drop a unique schema in the supplied **test** database.
-CI supplies an isolated PostgreSQL service. The unit/protocol suite uses temporary
-Parquet data and never reads or writes your real sources. `docs/VERIFICATION.md`
-records the actual evidence and remaining deployment checks.
+Each query must select one file format. Directories and S3 prefixes are recursive;
+overlapping selections are deduplicated. Hive partition columns are inferred.
+SQL can use SELECTs, CTEs, joins between those CTEs, and an allowlist of common
+analytical functions. File-reading functions, extensions, external URLs, dynamic
+SQL, and other host files are unavailable from query SQL.
 
-Operation events go to stderr using the template telemetry envelope, with operation,
-outcome and duration. No SQL, rows, paths or credentials are logged by the adapter.
-Review failures and duration weekly when operating; investigate write failures before
-retrying. This log is diagnostic, not a durable mutation journal. The client controls
-log retention and query-result retention. No cloud telemetry is shipped.
+`write_file` infers the output format from `.parquet`, `.csv`, `.tsv`, `.json`,
+`.jsonl`, or `.ndjson`. It accepts a nonempty JSON array of row objects and supports
+`create`, `append`, and explicit `replace`. Local publication is atomic per file and
+serialized among cooperating Data MCP writers. Append validates columns and safe
+type casts, but rewrites CSV, TSV, and JSON files in full; prefer immutable partitions
+for large datasets. S3 writes support atomic object `create` and explicit `replace`,
+not append.
 
-Container packaging is supplied for Linux deployment; bind-mount only the intended
-root/config/CA paths and pass credential environment variables. Keep stdio attached
-with `docker run -i`; there is no HTTP listener. See `REPRODUCIBILITY.md` and the
-inherited release checklist before distributing or deploying.
+PostgreSQL and MySQL query tools accept one SELECT. Their execute tools accept one
+INSERT, UPDATE, or DELETE without `RETURNING`; successful calls return only after
+commit. MongoDB accepts JSON filters/projections and operator-style updates.
+Server-side JavaScript is rejected. Empty update/delete filters require
+`allow_all=true`.
+
+Never automatically retry a write. A connection can fail after the backend commits
+but before the client receives the response.
+
+## Limits and trust model
+
+Query results default to 500 rows and 256 KiB of serialized data. Writes default to
+1 MiB of input JSON. S3 queries first check object metadata and refuse aggregate
+downloads above 256 MiB. Text-file appends refuse to rewrite an existing file above
+256 MiB by default. DuckDB uses 512 MiB of working memory, two threads, no disk spill,
+disabled extension loading, and a 30-second interrupt timer.
+These serialization limits do not bound the in-memory size of one database cell or
+MongoDB document while its driver decodes it.
+
+Configured roots, buckets, endpoints, database roles, and environment variables are
+operator-owned trust boundaries. Data MCP prevents path traversal and SQL access to
+unselected local files; it is not an OS sandbox against a hostile local process.
+Database functions, triggers, custom types, MongoDB operators, and S3-compatible
+endpoints run with their configured backend authority. Use least-privilege accounts
+and restrict the MCP client's tool allowlist.
+
+The server logs structured operation name, outcome, and duration to stderr. It does
+not log SQL, rows, paths, object keys, or credentials. Clients control retention of
+returned data.
+
+## Compatibility and semantic metrics
+
+The original `[parquet.<name>]` configuration and `list_parquet`,
+`describe_parquet`, `query_parquet`, and `write_parquet` tools remain available for
+existing clients. New configurations should use `[files.<name>]` and the generic file
+tools.
+
+An optional, versioned semantic manifest adds `get_semantic_context`, `list_metrics`,
+and `run_metric`. Metrics can target `backend="file"`, legacy
+`backend="parquet"`, or `backend="postgres"`. See
+[the semantic integration plan](docs/ANA_LITE_PLAN.md),
+[metric parameters](docs/METRIC_PARAMETERS.md), and
+[output contracts](docs/METRIC_OUTPUT_CONTRACTS.md).
+
+## Development
+
+```sh
+uv sync --frozen --all-extras --dev
+make check
+make build
+```
+
+PostgreSQL integration tests require `DATA_MCP_TEST_DSN` to name a disposable test
+database. Other connector tests use isolated fakes and never access live services.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
+[the verification guide](docs/VERIFICATION.md).
+
+Data MCP is available under the [MIT License](LICENSE).

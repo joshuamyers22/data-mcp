@@ -137,8 +137,8 @@ def validate_values(
     return bound
 
 
-def placeholders(sql: str, backend: Literal["parquet", "postgres"]) -> set[str]:
-    tree = statement(sql, "duckdb" if backend == "parquet" else "postgres")
+def placeholders(sql: str, backend: Literal["file", "parquet", "postgres"]) -> set[str]:
+    tree = statement(sql, "duckdb" if backend in {"file", "parquet"} else "postgres")
     if tree.find(exp.Parameter):
         raise DataError("Use declared named metric placeholders")
     names: set[str] = set()

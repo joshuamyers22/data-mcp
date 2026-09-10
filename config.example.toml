@@ -1,17 +1,35 @@
 max_rows = 500
 max_result_bytes = 262144
+max_write_bytes = 1048576
+max_files = 10000
+max_download_bytes = 268435456
+max_rewrite_bytes = 268435456
 query_timeout_seconds = 30
 
-[parquet.raw]
-path = "/Volumes/raw/parquet"
-writable = true
+[files.local]
+path = "/absolute/path/to/data"
+writable = false
+formats = ["parquet", "csv", "tsv", "json"]
 
-[postgres.local]
-dsn_env = "DATA_MCP_LOCAL_DSN"
-writable = true
-sslmode = "disable" # Only for a trusted local PostgreSQL server.
-
-[postgres.cloud]
-dsn_env = "DATA_MCP_CLOUD_DSN"
-writable = true
+[postgres.analytics]
+dsn_env = "DATA_MCP_POSTGRES_DSN"
+writable = false
 sslmode = "verify-full"
+
+[mysql.warehouse]
+dsn_env = "DATA_MCP_MYSQL_DSN"
+writable = false
+tls = true
+
+[mongodb.documents]
+uri_env = "DATA_MCP_MONGODB_URI"
+database = "analytics"
+writable = false
+tls = true
+
+[s3.lake]
+bucket = "example-data-bucket"
+prefix = "datasets"
+region = "us-east-1"
+writable = false
+formats = ["parquet", "csv", "json"]

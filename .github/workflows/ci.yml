@@ -8,7 +8,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
@@ -19,14 +19,38 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
+      mysql:
+        image: mysql:8.4@sha256:3466ba4a4828aa8d46fb7c3bc16b67b781c98413cf4ea0fac6feaa6e881faa26
+        env:
+          MYSQL_ROOT_PASSWORD: data_mcp_test_only
+          MYSQL_DATABASE: data_mcp_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -pdata_mcp_test_only"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      mongodb:
+        image: mongo:8.0@sha256:4a0f30875898413139bec44c73c02a05fed172578de65b644dcdcee143ae7306
+        env:
+          GLIBC_TUNABLES: glibc.pthread.rseq=1
+        ports: ["27017:27017"]
+      s3:
+        image: motoserver/moto:5.1.13@sha256:0503bdc569e122966fc5fceef43d4a9562ed21e4091cf865801dba90cbb62ea5
+        ports: ["5000:5000"]
     env:
       DATA_MCP_TEST_DSN: postgresql://postgres:data_mcp_test_only@127.0.0.1:5432/data_mcp_test
+      DATA_MCP_MYSQL_TEST_DSN: mysql://root:data_mcp_test_only@127.0.0.1:3306/data_mcp_test
+      DATA_MCP_MONGODB_TEST_URI: mongodb://127.0.0.1:27017
+      DATA_MCP_S3_TEST_ENDPOINT: http://127.0.0.1:5000
+      AWS_ACCESS_KEY_ID: testing
+      AWS_SECRET_ACCESS_KEY: testing
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           version: "0.12.5"
-      - run: uv sync --frozen --dev
+      - run: uv sync --frozen --all-extras --dev
       - run: make check
       - run: make export-check
       - run: make audit build
