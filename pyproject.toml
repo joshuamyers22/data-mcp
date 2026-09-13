@@ -16,7 +16,7 @@ classifiers = [
     "Topic :: Database :: Database Engines/Servers",
 ]
 dependencies = [
-    "mcp>=2,<3",
+    "mcp>=2.2.0,<3",
     "duckdb>=1.4,<2",
     "psycopg[binary]>=3.3.5,<4",
     "sqlglot>=28,<31",
