@@ -45,7 +45,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "pyright==1.1.411",
+    "pyright==1.1.413",
     "ruff==0.16.6",
     "pytest>=8,<10",
     "pyarrow-stubs>=20,<21",
